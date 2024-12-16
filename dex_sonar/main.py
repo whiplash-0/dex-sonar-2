@@ -3,7 +3,8 @@ from asyncio import CancelledError, sleep
 
 from dex_sonar import time
 from dex_sonar.bot import Bot
-from dex_sonar.config import BOT_TOKEN, SILENT_BOT_TOKEN, config
+from dex_sonar.config import parameters
+from dex_sonar.config.config import config
 from dex_sonar.live_pairs import LivePairs
 from dex_sonar.logs import setup_logging
 
@@ -15,8 +16,8 @@ logger = logging.getLogger(__name__)
 class Application:
     def __init__(self):
         self.bot = Bot(
-            token=BOT_TOKEN,
-            token_silent=SILENT_BOT_TOKEN,
+            token=parameters.BOT_TOKEN,
+            token_silent=parameters.SILENT_BOT_TOKEN,
         )
         self.pairs = LivePairs(
             update_frequency=config.get_timedelta_from_seconds('Pairs', 'update_frequency'),

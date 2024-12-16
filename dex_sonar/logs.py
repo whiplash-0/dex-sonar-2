@@ -7,7 +7,7 @@ from statistics import mean
 import colorama
 from colorama import Fore
 
-from dex_sonar.config import LOGGING_FORMAT, LOGGING_LEVEL, LOGGING_TIMESTAMP_FORMAT
+from dex_sonar.config import parameters
 
 
 VERBOSE = floor(mean([logging.DEBUG, logging.INFO]))
@@ -37,11 +37,11 @@ def setup_logging():
     logging.Logger.verbose = verbose
 
     root_logger = getLogger()
-    root_logger.setLevel(level=LOGGING_LEVEL)
+    root_logger.setLevel(level=parameters.LOGGING_LEVEL)
 
     handler = StreamHandler()
-    handler.setLevel(LOGGING_LEVEL)
-    handler.setFormatter(ColoredFormatter(LOGGING_FORMAT, datefmt=LOGGING_TIMESTAMP_FORMAT))
+    handler.setLevel(parameters.LOGGING_LEVEL)
+    handler.setFormatter(ColoredFormatter(parameters.LOGGING_FORMAT, datefmt=parameters.LOGGING_TIMESTAMP_FORMAT))
     root_logger.addHandler(handler)
 
     getLogger('asyncio').setLevel(logging.WARNING)

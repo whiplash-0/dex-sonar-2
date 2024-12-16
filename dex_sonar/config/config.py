@@ -1,7 +1,6 @@
-import logging
 from configparser import ConfigParser
 from datetime import timedelta
-from os import environ, getcwd, path
+from os import getcwd, path
 
 
 class Config(ConfigParser):
@@ -28,18 +27,3 @@ config = Config()
 config.read('config.ini')
 config.read('dev.ini')
 if config.getboolean('Bot', 'testing_mode'): config.read('testing.ini')
-
-
-TESTING_MODE = config.getboolean('Bot', 'testing_mode')
-PRODUCTION_MODE = not TESTING_MODE
-
-LOGGING_LEVEL = logging.INFO if not config.getboolean('Logging', 'debug_mode') else logging.DEBUG
-LOGGING_FORMAT = (
-    '%(name)s :: %(levelname)s :: %(message)s'
-    if PRODUCTION_MODE else
-    '%(asctime)s :: %(name)s :: %(message)s'
-)
-LOGGING_TIMESTAMP_FORMAT = '%m-%d %H:%M:%S'
-
-BOT_TOKEN = environ.get('BOT_TOKEN' if PRODUCTION_MODE else 'TESTING_BOT_TOKEN')
-SILENT_BOT_TOKEN = environ.get('SILENT_BOT_TOKEN' if PRODUCTION_MODE else 'TESTING_SILENT_BOT_TOKEN')
