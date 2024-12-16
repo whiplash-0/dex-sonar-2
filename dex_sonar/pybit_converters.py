@@ -27,10 +27,16 @@ class Ticker(BaseModel):
             if value == '': fields[name] = None
         return fields
 
+def convert_get_tickers(response: Response) -> list[Ticker]:
+    return [Ticker(**x) for x in response['result']['list']]
+
 
 class StreamTicker(Ticker):
     cross_sequence: int = Field(..., alias='cs')
     timestamp: datetime = Field(..., alias='ts')
+
+def convert_stream_ticker(response: Response) -> StreamTicker:
+    return StreamTicker(**response, **response['data'])
 
 
 class Kline(BaseModel):
@@ -41,26 +47,6 @@ class Kline(BaseModel):
     closes: list[float] = Field(...)
     volumes: list[float] = Field(...)
     turnovers: list[float] = Field(...)
-
-
-class StreamKline(BaseModel):
-    symbol: Symbol = Field(...)
-    start: datetime = Field(..., alias='start')
-    end: datetime = Field(..., alias='end')
-    open: float = Field(..., alias='open')
-    close: float = Field(..., alias='close')
-    high: float = Field(..., alias='high')
-    low: float = Field(..., alias='low')
-    volume: float = Field(..., alias='volume')
-    turnover: float = Field(..., alias='turnover')
-    confirm: bool = Field(..., alias='confirm')
-
-
-def convert_get_tickers(response: Response) -> list[Ticker]:
-    return [Ticker(**x) for x in response['result']['list']]
-
-def convert_stream_ticker(response: Response) -> StreamTicker:
-    return StreamTicker(**response, **response['data'])
 
 def convert_get_kline(response: Response, from_past_to_present: bool = False) -> Kline:
     data = response['result']['list']
@@ -74,6 +60,19 @@ def convert_get_kline(response: Response, from_past_to_present: bool = False) ->
         volumes=kline[5],
         turnovers=kline[6],
     )
+
+
+class StreamKline(BaseModel):
+    symbol: Symbol = Field(...)
+    start: datetime = Field(..., alias='start')
+    end: datetime = Field(..., alias='end')
+    open: float = Field(..., alias='open')
+    close: float = Field(..., alias='close')
+    high: float = Field(..., alias='high')
+    low: float = Field(..., alias='low')
+    volume: float = Field(..., alias='volume')
+    turnover: float = Field(..., alias='turnover')
+    confirm: bool = Field(..., alias='confirm')
 
 def convert_stream_kline(response: Response) -> StreamKline:
     return StreamKline(symbol=response['topic'].rsplit('.', 1)[-1], **response['data'][0])
