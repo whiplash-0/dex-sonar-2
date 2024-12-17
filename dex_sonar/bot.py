@@ -80,7 +80,7 @@ class Bot:
         else:
             await bot.send_photo(
                 chat_id=user,
-                photo=text,
+                photo=image,
                 caption=text,
                 reply_markup=reply_markup,
                 disable_notification=silent,
