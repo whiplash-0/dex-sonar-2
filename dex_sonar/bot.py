@@ -7,6 +7,11 @@ from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder, BaseHandler, Defaults
 
 
+UserID = int
+Text = str
+ImageBuffer = BytesIO
+
+
 class Bot:
     def __init__(self, token, token_silent):
         defaults = Defaults(
@@ -57,11 +62,11 @@ class Bot:
 
     async def send_message(
             self,
-            user: int,
-            text: str,
-            image: BytesIO = None,
+            user: UserID,
+            text: Text,
+            image: ImageBuffer = None,
             reply_markup: InlineKeyboardMarkup = None,
-            silent = False,
+            silent=False,
     ):
         bot = self.bot if not silent else self.bot_silent
 
