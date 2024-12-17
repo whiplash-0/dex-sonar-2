@@ -30,6 +30,13 @@ class TimeSeries(Generic[Value]):
     def __getitem__(self, index: Index | slice) -> Value:
         return self.values[index]
 
+    def __repr__(self):
+        if self.is_empty():
+            return f'{self.__class__.__name__}()'
+        else:
+            format = "%m/%d-%H:%M"
+            return f'{self.__class__.__name__}({self.start.strftime(format)} -> {self.end.strftime(format)}, length={len(self)})'
+
     def is_empty(self):
         return not self.values
 
