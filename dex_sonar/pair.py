@@ -22,6 +22,14 @@ class Pair:
     funding_rate: Optional[float]
     next_funding_time: datetime
 
+    @property
+    def price(self):
+        return self.prices[-1]
+
+    @property
+    def pretty_symbol(self):
+        return self.symbol[:-4] if self.symbol.endswith('USDT') else self.symbol
+
     def update(self, turnover, open_interest, funding_rate, next_funding_time):
         self.turnover = turnover
         self.open_interest = open_interest
