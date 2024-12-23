@@ -33,7 +33,7 @@ class Application:
         try:
             self.pairs.subscribe_to_stream()
             while True:
-                await self.bot.set_description(f'Uptime: {time.format_timedelta(time.get_time_passed_since(self.start), shorten=True)}')
+                await self.update_bot_status()
                 await sleep(60)
 
         except CancelledError:
@@ -41,7 +41,13 @@ class Application:
 
         finally:
             self.pairs.close_connection()
-            await self.bot.remove_description()
+            await self.clear_bot_status()
+
+    async def update_bot_status(self):
+        await self.bot.set_description(f'Uptime: {time.format_timedelta(time.get_time_passed_since(self.start), shorten=True)}')
+
+    async def clear_bot_status(self):
+        await self.bot.remove_description()
 
     def callback_on_pair_update(self):
         ...
