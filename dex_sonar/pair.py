@@ -10,15 +10,18 @@ from dex_sonar.time_series import TimeSeries
 
 
 Symbol = str
+Price = float
+Turnover = float
+OpenInterest = float
 
 
 @dataclass
 class Pair:
     symbol: Symbol
-    prices: TimeSeries[float]
-    turnovers: TimeSeries[float]
-    turnover: float
-    open_interest: float
+    prices: TimeSeries[Price]
+    turnovers: TimeSeries[Turnover]
+    turnover: Turnover
+    open_interest: OpenInterest
     funding_rate: Optional[float]
     next_funding_time: datetime
 
