@@ -15,7 +15,7 @@ class LivePairs:
     def __init__(
             self,
             update_frequency: timedelta = timedelta(seconds=10),
-            callback_on_update: Callable[[], None] = lambda: None,
+            callback_on_update: Callable[[Pair], None] = lambda _: None,
             include_filter: Callable[[Pairs], Pairs] = lambda pairs: pairs,
     ):
         self.pairs: dict[Symbol, Pair] = {}
@@ -128,16 +128,17 @@ class LivePairs:
         if time.get_timestamp() - self.last_update[symbol] >= self.update_frequency:
             self.last_update[symbol] = time.get_timestamp()
             ticker = convert_stream_ticker(response)
+            pair = self.pairs[symbol]
 
-            self.pairs[symbol].prices.update(
+            pair.prices.update(
                 ticker.price,
                 time.ceil_timestamp_minute(ticker.timestamp),
             )
-            self.pairs[symbol].update(
+            pair.update(
                 turnover=ticker.turnover,
                 open_interest=ticker.open_interest,
                 funding_rate=ticker.funding_rate,
                 next_funding_time=ticker.next_funding_time,
             )
 
-            self.callback_on_update()
+            self.callback_on_update(pair)

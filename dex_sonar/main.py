@@ -7,6 +7,7 @@ from dex_sonar.config import parameters
 from dex_sonar.config.config import config
 from dex_sonar.live_pairs import LivePairs
 from dex_sonar.logs import setup_logging
+from dex_sonar.pair import Pair
 
 
 setup_logging()
@@ -49,7 +50,7 @@ class Application:
     async def clear_bot_status(self):
         await self.bot.remove_description()
 
-    def callback_on_pair_update(self):
+    def callback_on_pair_update(self, pair: Pair):
         ...
 
 
