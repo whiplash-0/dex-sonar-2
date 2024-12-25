@@ -1,4 +1,4 @@
-from asyncio import run
+import asyncio
 from io import BytesIO
 from typing import Coroutine, Iterable
 
@@ -30,7 +30,7 @@ class Bot:
         self.application_silent.add_handlers(handlers)
 
     def run(self, coroutine: Coroutine):
-        run(self._run(coroutine))
+        asyncio.run(self._run(coroutine))
 
     async def _run(self, coroutine: Coroutine):
         async with self.application:
