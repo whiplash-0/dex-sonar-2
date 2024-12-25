@@ -15,10 +15,10 @@ class Ticker(BaseModel):
     turnover: float = Field(..., alias='turnover24h')
     funding_rate: Optional[float] = Field(..., alias='fundingRate')
     next_funding_time: datetime = Field(..., alias='nextFundingTime')
-    best_ask_price: float = Field(..., alias='ask1Price')
-    best_bid_price: float = Field(..., alias='bid1Price')
-    best_ask_size: float = Field(..., alias='ask1Size')
-    best_bid_size: float = Field(..., alias='bid1Size')
+    best_ask_price: Optional[float] = Field(..., alias='ask1Price')
+    best_bid_price: Optional[float] = Field(..., alias='bid1Price')
+    best_ask_size: Optional[float] = Field(..., alias='ask1Size')
+    best_bid_size: Optional[float] = Field(..., alias='bid1Size')
 
     @model_validator(mode='before')
     @classmethod
