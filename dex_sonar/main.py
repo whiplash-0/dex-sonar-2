@@ -1,5 +1,5 @@
+import asyncio
 import logging
-from asyncio import CancelledError, sleep
 
 from dex_sonar import time
 from dex_sonar.bot import Bot
@@ -7,7 +7,9 @@ from dex_sonar.config import parameters
 from dex_sonar.config.config import config
 from dex_sonar.live_pairs import LivePairs
 from dex_sonar.logs import setup_logging
+from dex_sonar.message import EventMessage
 from dex_sonar.pair import Pair
+from dex_sonar.trend_detector import Trend, TrendDetector
 
 
 setup_logging()
@@ -25,6 +27,11 @@ class Application:
             callback_on_update=self.callback_on_pair_update,
             include_filter=lambda pairs: sorted(pairs, key=lambda x: x.turnover, reverse=True)[:1],
         )
+        self.trend_detector = TrendDetector(
+            max_range=60,
+            absolute_change_threshold=lambda range, is_uptrend: 0.01,
+        )
+        self.event_loop = None
         self.start = time.get_timestamp()
 
     def run(self):
@@ -35,9 +42,9 @@ class Application:
             self.pairs.subscribe_to_stream()
             while True:
                 await self.update_bot_status()
-                await sleep(60)
+                await asyncio.sleep(10)
 
-        except CancelledError:
+        except asyncio.CancelledError:
             logger.info(f'Stopping the bot')
 
         finally:
@@ -51,7 +58,15 @@ class Application:
         await self.bot.remove_description()
 
     def callback_on_pair_update(self, pair: Pair):
-        ...
+        if trend := self.trend_detector.detect(pair): self.bot.run_coroutine_threadsafe(self.callback_on_pair_update_async_part(pair, trend))
+
+    async def callback_on_pair_update_async_part(self, pair: Pair, trend: Trend):
+        message = EventMessage(pair, event=f'{trend.change:+.1%}')
+        await self.bot.send_message(
+            parameters.USER_ID,
+            message.get_text(),
+            message.get_image(),
+        )
 
 
 if __name__ == '__main__':
