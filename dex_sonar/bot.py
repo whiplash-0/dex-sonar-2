@@ -1,6 +1,6 @@
 import asyncio
 from io import BytesIO
-from typing import Coroutine, Iterable
+from typing import Coroutine, Iterable, Optional
 
 from telegram import Bot as TelegramBot, InlineKeyboardMarkup, LinkPreviewOptions
 from telegram.constants import ParseMode
@@ -18,12 +18,11 @@ class Bot:
             parse_mode=ParseMode.MARKDOWN_V2,
             link_preview_options=LinkPreviewOptions(is_disabled=True),
         )
-
         self.application = ApplicationBuilder().token(token).defaults(defaults).build()
         self.application_silent = ApplicationBuilder().token(token_silent).defaults(defaults).build()
-
         self.bot: TelegramBot = self.application.bot
         self.bot_silent: TelegramBot = self.application_silent.bot
+        self.asyncio_event_loop: Optional[asyncio.AbstractEventLoop] = None
 
     def add_handlers(self, handlers: Iterable[BaseHandler]):
         self.application.add_handlers(handlers)
@@ -32,7 +31,12 @@ class Bot:
     def run(self, coroutine: Coroutine):
         asyncio.run(self._run(coroutine))
 
+    def run_coroutine_threadsafe(self, coroutine: Coroutine):
+        asyncio.run_coroutine_threadsafe(coroutine, loop=self.asyncio_event_loop)
+
     async def _run(self, coroutine: Coroutine):
+        self.asyncio_event_loop = asyncio.get_running_loop()
+
         async with self.application:
             await self.application.start()
             await self.application.updater.start_polling()
