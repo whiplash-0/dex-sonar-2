@@ -75,6 +75,10 @@ class TrendMessage(Message):
             size=0.4,
             height_ratio=0.5,
 
+            colors=[
+                ('#4287f5', 0, trend.start - 1),
+                ('#ff367c', trend.start, pair.prices.get_last_index()),
+            ],
             price_as_percent=True,
             hide_turnover_ticks=True,
 
