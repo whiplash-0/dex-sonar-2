@@ -47,9 +47,6 @@ class LivePairs:
         pairs = ', '.join([x.pretty_symbol for x in self.pairs.values()])
         return f'{self.__class__.__name__}({pairs})'
 
-    def get_symbols(self) -> list[Symbol]:
-        return [x.symbol for x in sorted(self.pairs.values(), key=lambda x: x.turnover, reverse=True)]
-
     def subscribe_to_stream(self):
         self._update_klines()
         self.websocket.kline_stream(1, self.pairs.keys(), self._handle_kline_update)
