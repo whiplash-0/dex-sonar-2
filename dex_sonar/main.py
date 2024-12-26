@@ -8,7 +8,7 @@ from dex_sonar.config.config import config
 from dex_sonar.live_pairs import LivePairs
 from dex_sonar.logs import setup_logging
 from dex_sonar.message import TrendMessage
-from dex_sonar.pair import Pair
+from dex_sonar.pair import Contract, Pair
 from dex_sonar.trend_detector import Trend, TrendDetector
 
 
@@ -25,7 +25,14 @@ class Application:
         self.pairs = LivePairs(
             update_frequency=config.get_timedelta_from_seconds('Pairs', 'update_frequency'),
             callback_on_update=self.callback_on_pair_update,
-            include_filter=lambda pairs: sorted(pairs, key=lambda x: x.turnover, reverse=True)[:1],
+            include_filter=lambda pairs: sorted(
+                filter(
+                    lambda x: x.contract is Contract.USDT,
+                    pairs,
+                ),
+                key=lambda x: x.turnover,
+                reverse=True,
+            )[:1],
         )
         self.trend_detector = TrendDetector(
             max_range=60,
