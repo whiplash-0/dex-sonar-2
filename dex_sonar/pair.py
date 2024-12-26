@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Iterable, Optional
 
 from matplotlib import pyplot as plt
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator, PercentFormatter
 
-from dex_sonar.time_series import TimeSeries
+from dex_sonar.time_series import Index, TimeSeries
 
 
 Symbol = str
@@ -44,7 +44,7 @@ class Pair:
             size=1,
             height_ratio=0.25,
 
-            color='#4287f5',
+            colors: str | Iterable[tuple[str, Index, Index]] = '#4287f5',
             price_as_percent=False,
             turnover_as_percent=False,
             hide_price_ticks=False,
@@ -71,12 +71,16 @@ class Pair:
         axes = ax1, ax2
 
         # create graphs
-        ax1.plot(
-            self.prices.get_timestamps(),
-            self.prices.get_values(),
-            color=color,
-            linewidth=1.5 * 1.1 * size * size_price,
-        )
+        timestamps = self.prices.get_timestamps()
+
+        for color, start, end in [(colors, 0, self.prices.get_last_index())] if isinstance(colors, str) else colors:
+            ax1.plot(
+                timestamps[start:end],
+                self.prices[start:end],
+                color=color,
+                linewidth=1.65 * size * size_price,
+            )
+
         ax2.bar(
             self.turnovers.get_timestamps(),
             self.turnovers.get_values(),
