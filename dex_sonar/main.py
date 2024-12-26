@@ -39,13 +39,17 @@ class Application:
 
     async def _run(self):
         try:
+            logger.info('Starting bot')
+            logger.info('Pairs: ' + ', '.join([x.pretty_symbol for x in self.pairs]))
+
             self.pairs.subscribe_to_stream()
+
             while True:
                 await self.update_bot_status()
                 await asyncio.sleep(10)
 
         except asyncio.CancelledError:
-            logger.info(f'Stopping the bot')
+            logger.info('Stopping bot')
 
         finally:
             self.pairs.close_connection()
