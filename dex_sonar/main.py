@@ -71,7 +71,7 @@ class Application:
         with self.pairs.subscribe_to_stream():
             while True:
                 await self.callback_on_pair_update_async_part(*(await self.queue.get()))
-                logger.info(f'Callback executed. Queue size: {self.queue.qsize()}')
+                logger.info(f'Callback executed. Left: {self.queue.qsize()}')
 
     def callback_on_pair_update(self, pair: Pair):
         if time.get_time_passed_since(self.trend_detector.get_last_detection_time(pair)) >= self.detection_cooldown:
