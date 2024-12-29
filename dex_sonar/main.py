@@ -43,7 +43,7 @@ class Application:
                 (1,  0.01 * 0.5),
                 (15, 0.01 * 1),
             ),
-            turnover_multiplier=lambda x: 1 + 0.5 * (math.log10(self.pairs['BTCUSDT'].turnover) - math.log10(x)),
+            turnover_multiplier=lambda x: 1 + 1 * (math.log10(self.pairs['BTCUSDT'].turnover) - math.log10(x)),
         )
         self.tasks = AsyncInfiniteTasks(
             self.run_loop_updating_status(interval=timedelta(minutes=1)),
@@ -62,7 +62,7 @@ class Application:
     async def run_loop_updating_status(self, interval: timedelta):
         try:
             while True:
-                await self.bot.set_description(f'Uptime: {time.format_timedelta(time.get_time_passed_since(self.start), shorten=True)}')
+                await self.bot.set_description(f'Uptime: {time.format_timedelta(time.get_time_passed_since(self.start))}')
                 await asyncio.sleep(interval.total_seconds())
         finally:
             await self.bot.remove_description()
