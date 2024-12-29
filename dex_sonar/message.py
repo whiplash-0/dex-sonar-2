@@ -2,6 +2,7 @@ import math
 from abc import ABC, abstractmethod
 
 from aiogram.utils import markdown
+from matplotlib import pyplot as plt
 
 from dex_sonar.bot import ImageBuffer, Text
 from dex_sonar.pair import Pair
@@ -71,7 +72,7 @@ class TrendMessage(Message):
 
         # image
         buffer = ImageBuffer()
-        pair.create_chart(
+        fig = pair.create_chart(
             size=0.4,
             height_ratio=0.5,
 
@@ -91,12 +92,14 @@ class TrendMessage(Message):
 
             max_ticks_x=7,
             max_ticks_y=5,
-        ).savefig(
+        )
+        fig.savefig(
             buffer,
             format='png',
             dpi=150,
             bbox_inches='tight',
             pad_inches=0.1,
         )
+        plt.close(fig)
 
         super().__init__(text, buffer)
