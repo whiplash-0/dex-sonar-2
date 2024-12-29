@@ -1,8 +1,9 @@
 import asyncio
 import logging
+import math
 from datetime import timedelta
 
-from dex_sonar import time
+from dex_sonar import time, utils
 from dex_sonar.async_infinite_tasks import AsyncInfiniteTasks
 from dex_sonar.bot import Bot
 from dex_sonar.config import parameters
@@ -34,11 +35,15 @@ class Application:
                 ),
                 key=lambda x: x.turnover,
                 reverse=True,
-            )[:1],
+            )[:100],
         )
         self.trend_detector = TrendDetector(
-            max_range=60,
-            absolute_change_threshold=lambda range, is_uptrend: 0.01,
+            max_range=15,
+            absolute_change_threshold=utils.get_line(
+                (1,  0.01 * 0.5),
+                (15, 0.01 * 1),
+            ),
+            turnover_multiplier=lambda x: 1 + 0.5 * (math.log10(self.pairs['BTCUSDT'].turnover) - math.log10(x)),
         )
         self.tasks = AsyncInfiniteTasks(
             self.run_loop_updating_status(interval=timedelta(minutes=1)),
@@ -50,11 +55,8 @@ class Application:
     def run(self):
         logger.info('Starting bot')
         logger.info('Pairs: ' + ', '.join([x.pretty_symbol for x in self.pairs]))
-        asyncio.run(self._run())
+        asyncio.run(self.bot.run(self.tasks.run()))
         logger.info('Stopping bot')
-
-    async def _run(self):
-        await self.bot.run(self.tasks.run())
 
     async def run_loop_updating_status(self, interval: timedelta):
         try:
