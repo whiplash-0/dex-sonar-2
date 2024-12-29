@@ -32,6 +32,12 @@ class Pair:
     funding_rate: Optional[float]
     next_funding_time: datetime
 
+    def __eq__(self, other):
+        return other.symbol == self.symbol if isinstance(other, Pair) else False
+
+    def __hash__(self):
+        return hash(self.symbol)
+
     @property
     def contract(self) -> Contract:
         return (
