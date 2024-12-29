@@ -49,6 +49,7 @@ class Application:
             self.run_loop_updating_status(interval=timedelta(minutes=1)),
             self.run_loop_trend_detection(),
         )
+        self.detection_cooldown = timedelta(hours=1)
         self.start = time.get_timestamp()
         self.queue = asyncio.Queue()
 
@@ -73,9 +74,10 @@ class Application:
                 logger.info(f'Callback executed. Queue size: {self.queue.qsize()}')
 
     def callback_on_pair_update(self, pair: Pair):
-        if trend := self.trend_detector.detect(pair):
-            logger.info(f'Detected trend in {pair.pretty_symbol}: {trend.change:+.1%}')
-            self.tasks.run_coroutine_threadsafe(self.queue.put((pair, trend)))
+        if time.get_time_passed_since(self.trend_detector.get_last_detection_time(pair)) >= self.detection_cooldown:
+            if trend := self.trend_detector.detect(pair):
+                logger.info(f'Detected trend in {pair.pretty_symbol}: {trend.change:+.1%}')
+                self.tasks.run_coroutine_threadsafe(self.queue.put((pair, trend)))
 
     async def callback_on_pair_update_async_part(self, pair: Pair, trend: Trend):
         message = TrendMessage(pair, trend)
