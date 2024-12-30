@@ -17,7 +17,7 @@ class LivePairs:
             self,
             update_frequency: timedelta = timedelta(seconds=10),
             callback_on_update: Callable[[Pair], None] = lambda _: None,
-            include_filter: Callable[[Pairs], Pairs] = lambda pairs: pairs,
+            include_filter: Callable[[Pairs], Pairs] = lambda pairs: sorted(pairs, key=lambda x: x.turnover, reverse=True)[:10],
     ):
         self.pairs: dict[Symbol, Pair] = {}
         self.include_filter = include_filter
