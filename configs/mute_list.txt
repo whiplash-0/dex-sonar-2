@@ -1,0 +1,7 @@
+# Put token symbols here, e.g.
+
+# BTCUSDT
+# ETHUSDT
+# SOLUSDT
+
+# (but without #)

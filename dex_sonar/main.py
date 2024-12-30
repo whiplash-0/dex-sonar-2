@@ -36,6 +36,7 @@ class Application:
                 key=lambda x: x.turnover,
                 reverse=True,
             )[:100],
+            mute_list_file_name='mute_list.txt',
         )
         self.trend_detector = TrendDetector(
             max_range=15,
@@ -85,6 +86,7 @@ class Application:
             parameters.USER_ID,
             message.get_text(),
             message.get_image(),
+            silent=self.pairs.is_muted(pair),
         )
 
 
