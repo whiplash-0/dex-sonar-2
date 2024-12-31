@@ -28,7 +28,7 @@ class TimeSeries(Generic[Value]):
     def __len__(self):
         return len(self.values)
 
-    def __getitem__(self, index: Index | slice) -> Value:
+    def __getitem__(self, index: Index | slice) -> Value | list[Value]:
         return self.values[index]
 
     def __repr__(self):
