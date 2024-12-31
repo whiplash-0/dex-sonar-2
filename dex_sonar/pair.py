@@ -100,8 +100,8 @@ class Pair:
 
         for color, start, end in [(colors, 0, self.prices.get_last_index())] if isinstance(colors, str) else colors:
             ax1.plot(
-                timestamps[start:end],
-                self.prices[start:end],
+                timestamps[start:end + 1],
+                self.prices[start:end + 1],
                 color=color,
                 linewidth=1.65 * size * size_price,
             )
