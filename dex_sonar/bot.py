@@ -68,7 +68,6 @@ class Bot:
                 chat_id=user,
                 text=text,
                 reply_markup=reply_markup,
-                disable_notification=silent,
             )
         else:
             await bot.send_photo(
@@ -76,5 +75,4 @@ class Bot:
                 photo=image,
                 caption=text,
                 reply_markup=reply_markup,
-                disable_notification=silent,
             )
