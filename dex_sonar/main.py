@@ -51,7 +51,6 @@ class Application:
                     (1,  0.01 * 2),
                     (10, 0.01 * 3.5),
                     (30, 0.01 * 5),
-                    visualize=True,
                 )
                 if parameters.PRODUCTION_MODE else
                 lambda _: 0.01
