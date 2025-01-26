@@ -44,6 +44,9 @@ class TimeSeries(Sequence, Generic[Value]):
     def get_last_index(self) -> Index:
         return self.last
 
+    def get_normalized_index(self, index) -> Index:
+        return index % len(self.values)
+
     def get_time_step(self) -> Timestep:
         return self.step
 
