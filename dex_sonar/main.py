@@ -52,6 +52,7 @@ class Application:
         )
         self.tasks = AsyncInfiniteTasks(
             self.run_loop_updating_status(interval=timedelta(minutes=1)),
+            self.run_loop_checking_pairs_connection(interval=timedelta(seconds=10)),
             self.run_loop_trend_detection(),
         )
         self.start = time.get_timestamp()
@@ -70,6 +71,13 @@ class Application:
                 await asyncio.sleep(interval.total_seconds())
         finally:
             await self.bot.remove_description()
+
+    async def run_loop_checking_pairs_connection(self, interval: timedelta):
+        while True:
+            if not self.pairs.is_connection_alive():
+                logger.error(f'Pairs were disconnected')
+                raise asyncio.CancelledError()
+            await asyncio.sleep(interval.total_seconds())
 
     async def run_loop_trend_detection(self):
         self.pairs.subscribe_to_stream()

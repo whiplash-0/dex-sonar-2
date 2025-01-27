@@ -33,6 +33,9 @@ class LivePairs(Pairs):
 
         self._init(mute_list_file_name)
 
+    def is_connection_alive(self):
+        return self.websocket.is_connected()
+
     def subscribe_to_stream(self):
         self._update_klines()
         self.websocket.kline_stream(1, self.get_symbols(), self._handle_kline_update)
