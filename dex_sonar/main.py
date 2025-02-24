@@ -75,7 +75,7 @@ class Application:
     async def run_loop_checking_pairs_connection(self, interval: timedelta):
         while True:
             if not self.pairs.is_connection_alive():
-                logger.error(f'Pairs were disconnected')
+                logger.error(f'Pair connection was closed. Raising `CancelledError` to end program')
                 raise asyncio.CancelledError()
             await asyncio.sleep(interval.total_seconds())
 
