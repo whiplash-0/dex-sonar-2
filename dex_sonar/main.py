@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import logging
 from datetime import timedelta
 
@@ -69,21 +70,33 @@ class Application:
             while True:
                 await self.bot.set_description(f'Uptime: {time.format_timedelta(time.get_time_passed_since(self.start))}')
                 await asyncio.sleep(interval.total_seconds())
+
+        except asyncio.CancelledError:
+            logger.debug(f'Task `{inspect.currentframe().f_code.co_name}` was cancelled'); raise
+
         finally:
             await self.bot.remove_description()
 
     async def run_loop_checking_pairs_connection(self, interval: timedelta):
-        while True:
-            if not self.pairs.is_connection_alive():
-                logger.error(f'Pair connection was closed. Raising `CancelledError` to end program')
-                raise asyncio.CancelledError()
-            await asyncio.sleep(interval.total_seconds())
+        try:
+            while True:
+                if not self.pairs.is_connection_alive():
+                    logger.error(f'Pair connection was closed. Raising `CancelledError` to end program')
+                    raise asyncio.CancelledError()
+                await asyncio.sleep(interval.total_seconds())
+
+        except asyncio.CancelledError:
+            logger.debug(f'Task `{inspect.currentframe().f_code.co_name}` was cancelled'); raise
 
     async def run_loop_trend_detection(self):
-        self.pairs.subscribe_to_stream()
-        while True:
-            await self.callback_on_pair_update_async_part(*(await self.queue.get()))
-            logger.info(f'Callback executed. Left: {self.queue.qsize()}')
+        try:
+            self.pairs.subscribe_to_stream()
+            while True:
+                await self.callback_on_pair_update_async_part(*(await self.queue.get()))
+                logger.info(f'Callback executed. Left: {self.queue.qsize()}')
+
+        except asyncio.CancelledError:
+            logger.debug(f'Task `{inspect.currentframe().f_code.co_name}` was cancelled'); raise
 
     def callback_on_pair_update(self, pair: Pair):
         if trend := self.trend_detector.detect(pair):
