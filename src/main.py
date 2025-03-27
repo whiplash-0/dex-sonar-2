@@ -93,7 +93,7 @@ class Application:
             self.pairs.subscribe_to_stream()
             while True:
                 await self.callback_on_pair_update_async_part(*(await self.queue.get()))
-                logger.info(f'Callback executed. Left: {self.queue.qsize()}')
+                logger.debug(f'Trend detection callback executed. Left: {self.queue.qsize()}')
 
         except asyncio.CancelledError:
             logger.debug(f'Task `{inspect.currentframe().f_code.co_name}` was cancelled'); raise
