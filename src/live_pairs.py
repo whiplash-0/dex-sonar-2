@@ -4,10 +4,10 @@ from typing import Callable, Iterable, Optional
 
 from pybit.unified_trading import HTTP, WebSocket
 
-from dex_sonar import paths, time
-from dex_sonar.pair import Pair, Symbol, TimeSeries
-from dex_sonar.pairs import Pairs
-from dex_sonar.pybit_converters import Response, convert_get_kline, convert_get_tickers, convert_stream_kline, convert_stream_ticker
+from src import paths, time
+from src.pair import Pair, Symbol, TimeSeries
+from src.pairs import Pairs
+from src.pybit_converters import Response, convert_get_kline, convert_get_tickers, convert_stream_kline, convert_stream_ticker
 
 
 logger = logging.getLogger(__name__)

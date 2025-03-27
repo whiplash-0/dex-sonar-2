@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from unittest import TestCase, main
 
-from dex_sonar.time_series import TimeSeries
+from src.time_series import TimeSeries
 
 
 START = datetime.utcnow()

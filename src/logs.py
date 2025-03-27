@@ -7,7 +7,7 @@ from statistics import mean
 import colorama
 from colorama import Fore
 
-from dex_sonar.config import parameters
+from src.config import parameters
 
 
 VERBOSE = floor(mean([logging.INFO, logging.WARNING]))

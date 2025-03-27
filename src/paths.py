@@ -1,7 +1,7 @@
 from os import getcwd
 from os.path import join
 
-from dex_sonar.config import parameters
+from src.config import parameters
 
 
 Path = str

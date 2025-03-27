@@ -1,7 +1,7 @@
 import logging
 from os import environ
 
-from dex_sonar.config.config import CONFIGS_DIR as SOURCE_CONFIGS_DIR, config
+from src.config.config import CONFIGS_DIR as SOURCE_CONFIGS_DIR, config
 
 
 CONFIGS_DIR = SOURCE_CONFIGS_DIR

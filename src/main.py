@@ -5,16 +5,16 @@ from datetime import timedelta
 
 from dateutil import tz
 
-from dex_sonar import time, utils
-from dex_sonar.async_infinite_tasks import AsyncInfiniteTasks
-from dex_sonar.bot import Bot
-from dex_sonar.config import parameters
-from dex_sonar.config.config import config
-from dex_sonar.live_pairs import LivePairs
-from dex_sonar.logs import setup_logging
-from dex_sonar.message import TrendMessage
-from dex_sonar.pair import Contract, Pair
-from dex_sonar.trend_detector import Trend, TrendDetector
+from src import time, utils
+from src.async_infinite_tasks import AsyncInfiniteTasks
+from src.bot import Bot
+from src.config import parameters
+from src.config.config import config
+from src.live_pairs import LivePairs
+from src.logs import setup_logging
+from src.message import TrendMessage
+from src.pair import Contract, Pair
+from src.trend_detector import Trend, TrendDetector
 
 
 setup_logging()

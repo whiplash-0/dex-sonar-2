@@ -1,6 +1,6 @@
 from typing import Iterable, Iterator, KeysView
 
-from dex_sonar.pair import Pair, Symbol
+from src.pair import Pair, Symbol
 
 
 class Pairs:

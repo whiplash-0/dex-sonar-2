@@ -2,9 +2,9 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Callable, Optional
 
-from dex_sonar import time
-from dex_sonar.pair import Pair, Turnover
-from dex_sonar.time_series import Index
+from src import time
+from src.pair import Pair, Turnover
+from src.time_series import Index
 
 
 Change = float
