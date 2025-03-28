@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator, PercentFormatter
 
-from src.time_series import Index, TimeSeries
+from src.core.time_series import Index, TimeSeries
 
 
 Symbol = str

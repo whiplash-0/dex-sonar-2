@@ -4,10 +4,10 @@ from typing import Callable, Iterable, Optional
 
 from pybit.unified_trading import HTTP, WebSocket
 
-from src import paths, time
-from src.pair import Pair, Symbol, TimeSeries
-from src.pairs import Pairs
-from src.pybit_converters import Response, convert_get_kline, convert_get_tickers, convert_stream_kline, convert_stream_ticker
+from src.pairs.pair import Pair, Symbol, TimeSeries
+from src.pairs.pairs import Pairs
+from src.pairs.pybit_converters import Response, convert_get_kline, convert_get_tickers, convert_stream_kline, convert_stream_ticker
+from src.utils import paths, time
 
 
 logger = logging.getLogger(__name__)

@@ -5,16 +5,16 @@ from datetime import timedelta
 
 from dateutil import tz
 
-from src import time, utils
-from src.async_infinite_tasks import AsyncInfiniteTasks
-from src.bot import Bot
 from src.config import parameters
 from src.config.config import config
-from src.live_pairs import LivePairs
-from src.logs import setup_logging
-from src.message import TrendMessage
-from src.pair import Contract, Pair
-from src.trend_detector import Mode, Trend, TrendDetector
+from src.core.async_infinite_tasks import AsyncInfiniteTasks
+from src.core.bot import Bot
+from src.core.logs import setup_logging
+from src.core.message import TrendMessage
+from src.core.trend_detector import Mode, Trend, TrendDetector
+from src.pairs.live_pairs import LivePairs
+from src.pairs.pair import Contract, Pair
+from src.utils import time, utils
 
 
 setup_logging()

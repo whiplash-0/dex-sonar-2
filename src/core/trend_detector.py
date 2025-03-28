@@ -3,9 +3,9 @@ from datetime import datetime, timedelta
 from enum import Enum, auto
 from typing import Callable, Optional
 
-from src import time
-from src.pair import Pair, Turnover
-from src.time_series import Index
+from src.core.time_series import Index
+from src.pairs.pair import Pair, Turnover
+from src.utils import time
 
 
 Change = float

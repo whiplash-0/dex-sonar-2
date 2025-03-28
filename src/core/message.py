@@ -5,10 +5,10 @@ from datetime import timezone
 from aiogram.utils import markdown
 from matplotlib import pyplot as plt
 
-from src import time
-from src.bot import ImageBuffer, Text
-from src.pair import Pair
-from src.trend_detector import Trend
+from src.core.bot import ImageBuffer, Text
+from src.core.trend_detector import Trend
+from src.pairs.pair import Pair
+from src.utils import time
 
 
 def format_number_by_significant_digits(x, digits=1):

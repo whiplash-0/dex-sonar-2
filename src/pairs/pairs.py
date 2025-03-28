@@ -1,6 +1,6 @@
 from typing import Iterable, Iterator, KeysView
 
-from src.pair import Pair, Symbol
+from src.pairs.pair import Pair, Symbol
 
 
 class Pairs:

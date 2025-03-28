@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from unittest import TestCase, main
 
-from src.time_series import TimeSeries
+from src.core.time_series import TimeSeries
 
 
 START = datetime.utcnow()
