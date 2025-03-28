@@ -1,1 +1,1 @@
-worker: python dex_sonar/main.py
+worker: python src/main.py
