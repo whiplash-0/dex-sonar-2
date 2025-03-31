@@ -13,11 +13,11 @@ from src.core.message import TrendMessage
 from src.core.trend_detector import Mode, Trend, TrendDetector
 from src.pairs.live_pairs import LivePairs
 from src.pairs.pair import Contract, Pair
-from src.support.logs import setup_logging
+from src.support import logs
 from src.utils import time, utils
 
 
-setup_logging()
+logs.setup_logging(timezone=config.get_timezone('Logging', 'timezone'))
 logger = logging.getLogger(__name__)
 
 
