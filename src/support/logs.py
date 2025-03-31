@@ -1,8 +1,9 @@
 import logging
-from datetime import datetime
+from datetime import datetime, tzinfo
 from logging import Formatter, LogRecord, StreamHandler, getLogger
 from math import floor
 from statistics import mean
+from zoneinfo import ZoneInfo
 
 import colorama
 from colorama import Fore
@@ -29,8 +30,8 @@ class ColoredFormatter(Formatter):
         }[record.levelno] + super().format(record)
 
 
-def setup_logging():
-    logging.Formatter.converter = lambda *args: datetime.utcnow().timetuple()
+def setup_logging(timezone: tzinfo = ZoneInfo('UTC')):
+    logging.Formatter.converter = lambda *args: datetime.now(timezone).timetuple()
 
     colorama.init(autoreset=True)
     logging.addLevelName(VERBOSE, 'VERBOSE')
