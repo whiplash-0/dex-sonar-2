@@ -33,7 +33,7 @@ class Application:
             token_silent=parameters.SILENT_BOT_TOKEN,
         )
         self.pairs = LivePairs(
-            update_frequency=config.get_timedelta_from_seconds('Pairs', 'update_frequency'),
+            update_frequency=config.get_timedelta_from_seconds('Pairs', 'update frequency'),
             callback_on_update=self.callback_on_pair_update,
             include_filter=lambda pairs: sorted(
                 filter(

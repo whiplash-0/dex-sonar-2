@@ -35,5 +35,5 @@ config = Config()
 config.read('config.ini')
 config.read('dev.ini')
 
-TEST_MODE = config.getboolean('Bot', 'test_mode')
+TEST_MODE = config.getboolean('Bot', 'test mode')
 if TEST_MODE: config.read('test.ini')
