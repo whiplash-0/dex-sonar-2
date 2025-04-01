@@ -1,4 +1,4 @@
-from configparser import ConfigParser
+from configparser import RawConfigParser
 from datetime import timedelta
 from os import getcwd, path
 from zoneinfo import ZoneInfo
@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 CONFIGS_DIR = 'configs'
 
 
-class Config(ConfigParser):
+class Config(RawConfigParser):
     def read(self, file_name, directory_path=CONFIGS_DIR, **kwargs):
         super().read(path.join(getcwd(), directory_path, file_name))
 
