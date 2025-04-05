@@ -25,3 +25,6 @@ class Pairs:
 
     def get_symbols(self) -> KeysView[Symbol]:
         return list(self.pairs.keys())
+
+    def get_sorted_by_turnover(self, ascending=False) -> list[Pair]:
+        return sorted(self.pairs.values(), key=lambda x: x.turnover, reverse=not ascending)
