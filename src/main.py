@@ -35,18 +35,12 @@ class Application:
         self.pairs = LivePairs(
             update_frequency=CONFIG.get_timedelta_from_seconds('Pairs', 'update frequency'),
             callback_on_update=self.callback_on_pair_update,
-            include_filter=lambda pairs: sorted(
-                filter(
+            include_filter=(
+                lambda pairs: list(filter(
                     lambda x: x.contract is Contract.USDT,
-                    pairs,
-                ),
-                key=lambda x: x.turnover,
-                reverse=True,
-            )[:(
-                100
-                if parameters.PROD_MODE else
-                5
-            )],
+                    pairs.get_sorted_by_turnover(),
+                ))[:(100 if parameters.PROD_MODE else 5)]
+            ),
         )
         self.trend_detector = TrendDetector(
             max_range=30,
