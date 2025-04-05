@@ -40,7 +40,7 @@ class Application:
                 lambda pairs: list(filter(
                     lambda x: x.contract is Contract.USDT,
                     pairs.get_sorted_by_turnover(),
-                ))[:(100 if parameters.PROD_MODE else 5)]
+                ))[:parameters.PAIRS]
             ),
         )
         self.trend_detector = TrendDetector(
