@@ -1,4 +1,3 @@
-import math
 from abc import ABC, abstractmethod
 from datetime import timezone
 
@@ -9,33 +8,7 @@ from src.core.bot import ImageBuffer, Text
 from src.core.trend_detector import Trend
 from src.pairs.pair import Pair
 from src.utils import time
-
-
-def format_number_by_significant_digits(x, digits=1):
-    if x == 0:
-        return '0'
-    else:
-        magnitude = math.floor(math.log10(abs(x)))
-        factor = 10 ** (digits - magnitude - 1)
-        x = round(x * factor) / factor
-        return f'{x:.0f}' if magnitude - digits + 1 >= 0 else f'{x:g}'
-
-
-unit_letters = {
-    1: 'K',
-    2: 'M',
-    3: 'B',
-    4: 'T',
-    5: 'Q',
-}
-
-def format_large_number(x, decimal_places=0):
-    if abs(x) < 1000:
-        return str(int(x))
-    else:
-        unit = int(math.log10(abs(x))) // 3
-        n = x / 10 ** (3 * unit)
-        return f'{n:.{decimal_places}f}{unit_letters[unit]}'
+from src.utils.utils import format_large_number, format_number_by_significant_digits
 
 
 class Message(ABC):
