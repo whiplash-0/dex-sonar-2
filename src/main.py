@@ -3,8 +3,6 @@ import inspect
 import logging
 from datetime import timedelta
 
-from dateutil import tz
-
 from src.config import parameters
 from src.config.config import CONFIG
 from src.core.async_infinite_tasks import AsyncInfiniteTasks
@@ -107,7 +105,7 @@ class Application:
         message = TrendMessage(
             pair,
             trend,
-            timezone_=tz.gettz('Europe/Prague')
+            timezone_=CONFIG.get_timezone('Chart', 'timezone')
         )
         await self.bot.send_message(
             user=parameters.USER_ID,
