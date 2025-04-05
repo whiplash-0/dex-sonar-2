@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from src.config import parameters
 from src.config.config import CONFIG
@@ -66,7 +66,10 @@ class Application:
     async def run_loop_updating_status(self, interval: timedelta):
         try:
             while True:
-                await self.bot.set_description(f'Uptime: {time.format_timedelta(time.get_time_passed_since(self.start))}')
+                await self.bot.set_description(
+                    f'Uptime: {time.format_timedelta(time.get_time_passed_since(self.start))} '
+                    f'({datetime.now(CONFIG.get_timezone("Logging", "timezone")).strftime("%H:%M %d-%m")})'
+                )
                 await asyncio.sleep(interval.total_seconds())
 
         except asyncio.CancelledError:
