@@ -60,7 +60,7 @@ class SpikeDetector:
                 for i, (x, y) in enumerate(zip(changes, thresholds))
                 if abs(x) >= y
             ]
-            change_index = indices[-1] if indices else None  # use first (shortest) change that is above threshold
+            change_index = indices[0] if indices else None  # use first (shortest) change that is above threshold
 
             # create spike
             if change_index is not None:
