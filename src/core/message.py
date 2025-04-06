@@ -6,7 +6,7 @@ from aiogram.utils import markdown
 from matplotlib import pyplot as plt
 
 from src.core.bot import ImageBuffer, Text
-from src.core.trend_detector import Trend
+from src.core.spike_detector import Spike
 from src.pairs.pair import Pair
 from src.utils import time
 from src.utils.utils import format_large_number, format_number_by_significant_digits
@@ -29,8 +29,8 @@ class Message(ABC):
         return self.buffer
 
 
-class TrendMessage(Message):
-    def __init__(self, pair: Pair, trend: Trend, timezone: tzinfo = ZoneInfo('UTC')):
+class SpikeMessage(Message):
+    def __init__(self, pair: Pair, spike: Spike, timezone: tzinfo = ZoneInfo('UTC')):
         # text
         lines = []
 
@@ -38,8 +38,8 @@ class TrendMessage(Message):
             if len(strings) == 1: lines.append(strings[0])
             else: lines.append(f'{strings[0]}{" " * (self.LINE_WIDTH - len(strings[0]) - len(strings[1]))}{strings[1]}')
 
-        duration = time.format_timedelta(pair.prices.get_timestamp(trend.end) - pair.prices.get_timestamp(trend.start), shorten=True)
-        add_line(pair.pretty_symbol, f'{trend.change:+.1%}/{duration}')
+        duration = time.format_timedelta(pair.prices.get_timestamp(spike.end) - pair.prices.get_timestamp(spike.start), shorten=True)
+        add_line(pair.pretty_symbol, f'{spike.change:+.1%}/{duration}')
         add_line('Price:', '$' + format_number_by_significant_digits(pair.price, significant_digits=3))
         add_line('Turnover:', '$' + format_large_number(pair.turnover, decimal_places=1, decrease_decimal_places=True))
         add_line('Funding rate:', format_number_by_significant_digits(pair.funding_rate * 100, significant_digits=1, decimal_places=3) + '%')
@@ -53,8 +53,8 @@ class TrendMessage(Message):
             height_ratio=0.5,
 
             colors=[
-                ('#4287f5', 0, trend.start),
-                ('#ff367c', trend.start, pair.prices.get_last_index()),
+                ('#4287f5', 0, spike.start),
+                ('#ff367c', spike.start, pair.prices.get_last_index()),
             ],
             price_as_percent=True,
             hide_turnover_ticks=True,
