@@ -46,8 +46,8 @@ class SpikeDetector:
 
             # calculate changes and minimal thresholds over given time range
             prices = pair.prices
-            max_range_ = min(self.max_range, len(prices) - 1)
-            changes = [(pair.price - x) / x for x in prices[-2:-max_range_ - 1 - 1:-1]]
+            actual_max_range = min(self.max_range, len(prices) - 1)  # avoid having max range longer than actual range
+            changes = [(pair.price - x) / x for x in prices[-2:-(actual_max_range + 1) - 1:-1]]  # from first change (2-nd candle) to last
 
             if self.mode is not Mode.BOTH:  # trick to make Mode work and include only relevant changes
                 changes = [max(x, 0) if self.mode is Mode.UPSPIKE else min(x, 0) for x in changes]
@@ -62,12 +62,12 @@ class SpikeDetector:
             ]
             change_index = indices[0] if indices else None  # use first (shortest) change that is above threshold
 
-            # create spike
+            # create and return spike
             if change_index is not None:
                 self.last_detection[pair] = time.get_timestamp()
                 return Spike(
                     change=changes[change_index],
-                    start=prices.get_normalized_index(-change_index - 2),
+                    start=prices.get_normalized_index(-(change_index + 1) - 1),  # +1 to align with candles instead of changes, -1 to align with negative indexing
                     end=prices.get_last_index(),
                 )
 
