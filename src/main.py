@@ -12,7 +12,7 @@ from src.core.spike_detector import Mode, Spike, SpikeDetector
 from src.pairs.live_pairs import LivePairs
 from src.pairs.pair import Contract, Pair
 from src.support import logs
-from src.utils import time, utils
+from src.utils import time
 from src.utils.utils import format_large_number
 
 
