@@ -30,13 +30,13 @@ class SpikeDetector:
             self,
             mode: Mode = Mode.BOTH,
             max_range: Range = 5,
-            absolute_change_threshold: Callable[[Range], Change] = lambda _: 5,
+            threshold_function: Callable[[Range], Change] = lambda _: 5,
             turnover_multiplier: Callable[[Turnover], float] = lambda _: 1,
             cooldown: timedelta = timedelta(),
     ):
         self.mode = mode
         self.max_range = max_range
-        self.absolute_change_threshold = absolute_change_threshold
+        self.threshold_function = threshold_function
         self.turnover_multiplier = turnover_multiplier
         self.cooldown = cooldown
         self.last_detection: dict[Pair, datetime] = {}
@@ -52,7 +52,7 @@ class SpikeDetector:
             if self.mode is not Mode.BOTH:  # trick to make Mode work and include only relevant changes
                 changes = [max(x, 0) if self.mode is Mode.UPSPIKE else min(x, 0) for x in changes]
 
-            thresholds = [self.absolute_change_threshold(1 + i) * self.turnover_multiplier(pair.turnover) for i in range(len(changes))]  # align ordinal with minute duration that function accepts by adding 1
+            thresholds = [self.threshold_function(1 + i) * self.turnover_multiplier(pair.turnover) for i in range(len(changes))]  # align ordinal with minute duration that function accepts by adding 1
 
             # find indices where changes are above corresponding thresholds
             indices = [
