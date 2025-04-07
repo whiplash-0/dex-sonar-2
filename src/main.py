@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 from src.config import parameters
 from src.config.config import CONFIG
+from src.core import spike_detector
 from src.core.async_infinite_tasks import AsyncInfiniteTasks
 from src.core.bot import Bot
 from src.core.message import SpikeMessage
@@ -46,7 +47,7 @@ class Application:
             max_range=CONFIG.getint('Spike detector', 'max range'),
             threshold_function=parameters.SpikeDetector.THRESHOLD_FUNCTION,
             turnover_multiplier=parameters.SpikeDetector.TURNOVER_MULTIPLIER,
-            cooldown=CONFIG.get_timedelta_from_minutes('Spike detector', 'cooldown'),
+            pair_cooldowns=spike_detector.PairCooldowns(cooldown=CONFIG.get_timedelta_from_minutes('Spike detector', 'cooldown')),
         )
         self.tasks = AsyncInfiniteTasks(
             self.run_loop_updating_status(interval=timedelta(minutes=1)),

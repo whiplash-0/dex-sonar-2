@@ -25,6 +25,18 @@ class Mode(Enum):
     DOWNSPIKE = auto()
 
 
+class PairCooldowns:
+    def __init__(self, cooldown: timedelta):
+        self.cooldown = cooldown
+        self.cooldown_starts: dict[Pair, datetime] = {}
+
+    def set_cooldown(self, pair: Pair):
+        self.cooldown_starts[pair] = time.get_timestamp()
+
+    def is_in_cooldown(self, pair: Pair):
+        return time.get_time_passed_since(self.cooldown_starts.get(pair, time.MIN_TIMESTAMP)) <= self.cooldown
+
+
 class SpikeDetector:
     def __init__(
             self,
@@ -32,17 +44,17 @@ class SpikeDetector:
             max_range: Range = 5,
             threshold_function: Callable[[Range], Change] = lambda _: 5,
             turnover_multiplier: Callable[[Turnover], float] = lambda _: 1,
-            cooldown: timedelta = timedelta(),
+            pair_cooldowns: PairCooldowns = PairCooldowns(cooldown=timedelta()),
     ):
         self.mode = mode
         self.max_range = max_range
         self.threshold_function = threshold_function
         self.turnover_multiplier = turnover_multiplier
-        self.cooldown = cooldown
+        self.pair_cooldowns = pair_cooldowns
         self.last_detection: dict[Pair, datetime] = {}
 
     def detect(self, pair: Pair) -> Optional[Spike]:
-        if not self._is_in_cooldown(pair):
+        if not self.pair_cooldowns.is_in_cooldown(pair):
 
             # calculate changes and minimal thresholds over given time range
             prices = pair.prices
@@ -64,7 +76,7 @@ class SpikeDetector:
 
             # create and return spike
             if change_index is not None:
-                self.last_detection[pair] = time.get_timestamp()
+                self.pair_cooldowns.set_cooldown(pair)
                 return Spike(
                     change=changes[change_index],
                     start=prices.get_normalized_index(-(change_index + 1) - 1),  # +1 to align with candles instead of changes, -1 to align with negative indexing
@@ -72,6 +84,3 @@ class SpikeDetector:
                 )
 
         return None
-
-    def _is_in_cooldown(self, pair):
-        return time.get_time_passed_since(self.last_detection.get(pair, time.MIN_TIMESTAMP)) <= self.cooldown
