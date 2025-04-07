@@ -8,7 +8,7 @@ from src.support.time_series import Index
 from src.utils import time
 
 
-Change = float
+Change = float  # relative
 Range = int
 
 
@@ -28,17 +28,17 @@ class Mode(Enum):
 class SpikeDetector:
     def __init__(
             self,
-            max_range: Range,
-            absolute_change_threshold: Callable[[Range], Change],
+            mode: Mode = Mode.BOTH,
+            max_range: Range = 5,
+            absolute_change_threshold: Callable[[Range], Change] = lambda _: 5,
             turnover_multiplier: Callable[[Turnover], float] = lambda _: 1,
             cooldown: timedelta = timedelta(),
-            mode: Mode = Mode.BOTH,
     ):
+        self.mode = mode
         self.max_range = max_range
         self.absolute_change_threshold = absolute_change_threshold
         self.turnover_multiplier = turnover_multiplier
         self.cooldown = cooldown
-        self.mode = mode
         self.last_detection: dict[Pair, datetime] = {}
 
     def detect(self, pair: Pair) -> Optional[Spike]:
