@@ -12,7 +12,7 @@ class AsyncTasks:
     If an exception occurs, all other related tasks should be cancelled accordingly, this won't be done automatically
     """
     def __init__(self, *tasks: Coroutine):
-        self.tasks: list[asyncio.Task] | list[Coroutine] = tasks
+        self.tasks: list[asyncio.Task] | tuple[Coroutine] = tasks
         self.loop: Optional[asyncio.AbstractEventLoop] = None
         self._are_cancelled = False
 
