@@ -42,16 +42,16 @@ class Cooldowns(Generic[T]):
 class SpikeDetector:
     def __init__(
             self,
-            mode: Mode = Mode.BOTH,
             max_range: Range = 5,
             threshold_function: Callable[[Range], Change] = lambda _: 5,
             turnover_multiplier: Callable[[Turnover], float] = lambda _: 1,
+            mode: Mode = Mode.BOTH,
             cooldown: timedelta = timedelta(),
     ):
-        self.mode = mode
         self.max_range = max_range
         self.threshold_function = threshold_function
         self.turnover_multiplier = turnover_multiplier
+        self.mode = mode
         self.pairs_cooldowns = Cooldowns(cooldown=cooldown)
 
     def detect(self, pair: Pair) -> Optional[Spike]:

@@ -45,10 +45,10 @@ class Application:
             ),
         )
         self.spike_detector = SpikeDetector(
-            mode=Mode.UPSPIKE,
             max_range=CONFIG.getint('Spike detector', 'max range'),
             threshold_function=parameters.SpikeDetector.THRESHOLD_FUNCTION,
             turnover_multiplier=parameters.SpikeDetector.TURNOVER_MULTIPLIER,
+            mode=Mode.UPSPIKE,
             cooldown=CONFIG.get_timedelta_from_minutes('Spike detector', 'cooldown'),
         )
         self.tasks = AsyncInfiniteTasks(
