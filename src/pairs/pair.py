@@ -59,12 +59,6 @@ class Pair:
     def price(self):
         return self.prices[-1]
 
-    def update(self, turnover, open_interest, funding_rate, next_funding_time):
-        self.turnover = turnover
-        self.open_interest = open_interest
-        self.funding_rate = funding_rate
-        self.next_funding_time = next_funding_time
-
     def create_chart(
             self,
             size=1,

@@ -79,12 +79,10 @@ class LivePairs(Pairs):
                     ticker.price,
                     time.ceil_timestamp_minute(ticker.timestamp),
                 )
-                pair.update(
-                    turnover=ticker.turnover,
-                    open_interest=ticker.open_interest,
-                    funding_rate=ticker.funding_rate,
-                    next_funding_time=ticker.next_funding_time,
-                )
+                pair.turnover = ticker.turnover
+                pair.open_interest = ticker.open_interest
+                pair.funding_rate = ticker.funding_rate
+                pair.next_funding_time = ticker.next_funding_time
 
                 self.callback_on_update(pair)
 
