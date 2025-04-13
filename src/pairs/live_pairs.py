@@ -43,11 +43,12 @@ class LivePairs(Pairs):
 
         self._init()
 
-    async def start_continuous_updating(self):
+    async def start_continuous_updating(self, blocking=False):
         self._update_candles()
         self.websocket.ticker_stream(self.get_symbols(), self._handle_ticker_update)
         self.websocket.kline_stream(1, self.get_symbols(), self._handle_kline_update)
         self._enable_websocket_callbacks()
+        if blocking: await asyncio.Future()
 
     def stop_continuous_updating(self):
         """
