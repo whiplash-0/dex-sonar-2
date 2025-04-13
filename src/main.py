@@ -36,7 +36,7 @@ class Application:
         self.pairs = LivePairs(
             update_frequency=CONFIG.get_timedelta_from_seconds('Pairs', 'update frequency'),
             update_frequency_instruments_info=CONFIG.get_timedelta_from_seconds('Pairs', 'update frequency instruments info'),
-            callback_on_update=self.callback_on_pair_update,
+            callback_on_price_update=self.callback_on_price_update,
             pairs_filter=(
                 lambda pairs: list(filter(
                     lambda x: x.contract is Contract.USDT,
@@ -101,7 +101,7 @@ class Application:
         except asyncio.CancelledError:
             logger.debug(f'Task `{inspect.currentframe().f_code.co_name}` was cancelled'); raise
 
-    def callback_on_pair_update(self, pair: Pair):
+    def callback_on_price_update(self, pair: Pair):
         if spike := self.spike_detector.detect(pair):
             logger.info(f'{pair.pretty_symbol}: {spike.change:+.1%}')
             self.tasks.run_coroutine_threadsafe(self.queue.put((pair, spike)))

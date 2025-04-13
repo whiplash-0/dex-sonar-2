@@ -25,13 +25,13 @@ class LivePairs(Pairs):
             self,
             update_frequency: timedelta = timedelta(seconds=10),
             update_frequency_instruments_info: timedelta = timedelta(seconds=60),
-            callback_on_update: Callable[[Pair], None] = lambda _: None,
+            callback_on_price_update: Callable[[Pair], None] = lambda _: None,
             pairs_filter: Callable[[list[Pair]], Iterable[Pair]] = lambda _: _,
     ):
         super().__init__()
 
         self.update_frequency = update_frequency
-        self.callback_on_update = callback_on_update
+        self.callback_on_price_update = callback_on_price_update
         self.pairs_filter = pairs_filter
 
         self.requests = unified_trading.HTTP(
@@ -121,7 +121,7 @@ class LivePairs(Pairs):
                 pair.funding_rate = ticker.funding_rate
                 pair.next_funding_time = ticker.next_funding_time
 
-                self.callback_on_update(pair)
+                self.callback_on_price_update(pair)
 
         except Exception:
             logger.exception(f'Callback `{inspect.currentframe().f_code.co_name}` caught exception'); raise
