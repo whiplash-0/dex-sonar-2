@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import timedelta
 from enum import Enum, auto
-from typing import Callable, Generic, Hashable, Optional, TypeVar
+from typing import Callable, Optional
 
 from src.pairs.pair import Pair, Turnover
 from src.support.time_series import Index
-from src.utils import time
+from src.utils.time import Cooldowns
 
 
 Change = float  # relative
@@ -23,20 +23,6 @@ class Mode(Enum):
     BOTH = auto()
     UPSPIKE = auto()
     DOWNSPIKE = auto()
-
-
-T = TypeVar('T', bound=Hashable)
-
-class Cooldowns(Generic[T]):
-    def __init__(self, cooldown: timedelta):
-        self.cooldown = cooldown
-        self.cooldowns_starts: dict[T, datetime] = {}
-
-    def set_cooldown(self, key: T):
-        self.cooldowns_starts[key] = time.get_timestamp()
-
-    def is_in_cooldown(self, key: T) -> bool:
-        return time.get_time_passed_since(self.cooldowns_starts.get(key, time.MIN_TIMESTAMP)) <= self.cooldown
 
 
 class SpikeDetector:

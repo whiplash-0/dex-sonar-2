@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from typing import Generic, Hashable, TypeVar
 
 
 MIN_TIMESTAMP = datetime.min.replace(tzinfo=timezone.utc)
@@ -16,6 +17,20 @@ def get_time_passed_since(ts: datetime) -> timedelta:
 def ceil_timestamp_minute(ts: datetime) -> datetime:
     ceiled_part = timedelta(seconds=ts.second, microseconds=ts.microsecond)
     return ts if not ceiled_part else ts - ceiled_part + timedelta(minutes=1)
+
+
+T = TypeVar('T', bound=Hashable)
+
+class Cooldowns(Generic[T]):
+    def __init__(self, cooldown: timedelta):
+        self.cooldown = cooldown
+        self.cooldowns_starts: dict[T, datetime] = {}
+
+    def set_cooldown(self, key: T):
+        self.cooldowns_starts[key] = get_timestamp()
+
+    def is_in_cooldown(self, key: T) -> bool:
+        return get_time_passed_since(self.cooldowns_starts.get(key, MIN_TIMESTAMP)) <= self.cooldown
 
 
 @dataclass
