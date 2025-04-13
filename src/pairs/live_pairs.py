@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 class LivePairs(Pairs):
     def __init__(
             self,
-            update_frequency_price: timedelta = timedelta(seconds=10),
-            update_frequency_instruments_info: timedelta = timedelta(seconds=60),
+            update_frequency_price: timedelta,
+            update_frequency_instruments_info: timedelta,
             callback_on_price_update: Callable[[Pair], None] = lambda _: None,
             pairs_filter: Callable[[list[Pair]], Iterable[Pair]] = lambda _: _,
     ):
