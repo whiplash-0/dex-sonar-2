@@ -50,6 +50,7 @@ class Application:
             pair_cooldowns=spike_detector.PairCooldowns(cooldown=CONFIG.get_timedelta_from_minutes('Spike detector', 'cooldown')),
         )
         self.tasks = AsyncInfiniteTasks(
+            self.pairs.start_continuous_updating(blocking=True),
             self.run_loop_updating_status(interval=timedelta(minutes=1)),
             self.run_loop_checking_pairs_connection(interval=timedelta(seconds=10)),
             self.run_loop_spike_detection(),
@@ -91,7 +92,6 @@ class Application:
 
     async def run_loop_spike_detection(self):
         try:
-            self.pairs.start_continuous_updating()
             while True:
                 await self.callback_on_pair_update_async_part(*(await self.queue.get()))
                 logger.debug(f'Spike detection callback executed. Left: {self.queue.qsize()}')
