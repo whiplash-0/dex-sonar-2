@@ -30,23 +30,15 @@ class LivePairs(Pairs):
             pairs_filter: Callable[[list[Pair]], Iterable[Pair]] = lambda _: _,
     ):
         super().__init__()
-
         self.callback_on_price_update = callback_on_price_update
         self.pairs_filter = pairs_filter
 
-        self.requests = unified_trading.HTTP(
-            testnet=False,
-        )
-        self.websocket = unified_trading.WebSocket(
-            testnet=False,
-            channel_type=CATEGORY,
-        )
-        self.updating_tasks = AsyncInfiniteTasks(
-            self._run_loop_instruments_info_update(poll_interval=update_frequency_instruments_info),
-        )
-        self.are_websocket_callbacks_enabled = False
+        self.requests = unified_trading.HTTP(testnet=False)
+        self.websocket = unified_trading.WebSocket(testnet=False, channel_type=CATEGORY)
+        self.updating_tasks = AsyncInfiniteTasks(self._run_loop_instruments_info_update(poll_interval=update_frequency_instruments_info))
         self.price_updates_cooldowns: Cooldowns[Symbol] = Cooldowns(cooldown=update_frequency_price)
 
+        self.are_websocket_callbacks_enabled = False
         self._init()
 
     async def start_continuous_updating(self, blocking=False):
