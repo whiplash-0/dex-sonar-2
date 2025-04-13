@@ -2,7 +2,10 @@ from datetime import datetime
 from enum import Enum, auto
 from typing import Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+
+HOUR_IN_MINUTES = 60
 
 
 Response = dict
@@ -77,6 +80,16 @@ class StreamKline(BaseModel):
     confirm: bool = Field(..., alias='confirm')
 
 
+class InstrumentInfo(BaseModel):
+    symbol: Symbol = Field(...)
+    funding_interval: int = Field(..., alias='fundingInterval')  # in hours
+
+    @field_validator('funding_interval', mode='before')
+    def _normalize_funding_interval(cls, v: int) -> int:
+        if v % HOUR_IN_MINUTES != 0: raise ValueError('`funding_interval` must be divisible by 60 (minutes)')
+        return int(v / HOUR_IN_MINUTES)
+
+
 class Convert:
     @staticmethod
     def get_tickers(response: Response) -> list[Ticker]:
@@ -103,3 +116,7 @@ class Convert:
     @staticmethod
     def stream_kline(response: Response) -> StreamKline:
         return StreamKline(symbol=response['topic'].rsplit('.', 1)[-1], **response['data'][0])
+
+    @staticmethod
+    def get_instruments_info(response: Response) -> list[InstrumentInfo]:
+        return [InstrumentInfo(**x) for x in response['result']['list']]
