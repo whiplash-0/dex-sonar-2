@@ -92,15 +92,16 @@ class LivePairs(Pairs):
 
     def _handle_kline_update(self, response: Response):
         try:
-            if response['data'][0]['confirm']:
+            if response['data'][0]['confirm']:  # if candle is final
                 kline = Convert.stream_kline(response)
+                pair = self[kline.symbol]
 
-                self[kline.symbol].prices.update(
+                pair.prices.update(
                     kline.close,
                     time.ceil_timestamp_minute(kline.end),
                     is_final=True,
                 )
-                self[kline.symbol].turnovers.update(
+                pair.turnovers.update(
                     kline.turnover,
                     time.ceil_timestamp_minute(kline.end),
                     is_final=True,
