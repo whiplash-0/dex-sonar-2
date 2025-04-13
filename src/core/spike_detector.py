@@ -51,7 +51,6 @@ class SpikeDetector:
         self.threshold_function = threshold_function
         self.turnover_multiplier = turnover_multiplier
         self.pairs_cooldowns = pairs_cooldowns
-        self.last_detection: dict[Pair, datetime] = {}
 
     def detect(self, pair: Pair) -> Optional[Spike]:
         if not self.pairs_cooldowns.is_in_cooldown(pair):
