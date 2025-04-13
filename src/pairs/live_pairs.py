@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import logging
 import time as pytime
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Callable, Iterable
 
 from pybit import unified_trading
@@ -12,6 +12,7 @@ from src.pairs.pair import Pair, Symbol, TimeSeries
 from src.pairs.pairs import Pairs
 from src.pairs.pybit_converters import Convert, InstrumentInfo, Response
 from src.utils import time
+from src.utils.time import Cooldowns
 
 
 CATEGORY = 'linear'
@@ -30,7 +31,6 @@ class LivePairs(Pairs):
     ):
         super().__init__()
 
-        self.update_frequency_price = update_frequency_price
         self.callback_on_price_update = callback_on_price_update
         self.pairs_filter = pairs_filter
 
@@ -45,7 +45,7 @@ class LivePairs(Pairs):
             self._run_loop_instruments_info_update(poll_interval=update_frequency_instruments_info),
         )
         self.are_websocket_callbacks_enabled = False
-        self.last_update: dict[Symbol, datetime] = {}
+        self.price_updates_cooldowns: Cooldowns[Symbol] = Cooldowns(cooldown=update_frequency_price)
 
         self._init()
 
@@ -90,7 +90,6 @@ class LivePairs(Pairs):
                 ))
 
         self.update(self.pairs_filter(pairs))
-        self.last_update = {x: time.MIN_TIMESTAMP for x in self.pairs}
 
     def _enable_websocket_callbacks(self):
         self.are_websocket_callbacks_enabled = True
@@ -107,8 +106,9 @@ class LivePairs(Pairs):
 
             symbol = response['data']['symbol']
 
-            if time.get_timestamp() - self.last_update[symbol] >= self.update_frequency_price:
-                self.last_update[symbol] = time.get_timestamp()
+            if not self.price_updates_cooldowns.is_in_cooldown(symbol):
+                self.price_updates_cooldowns.set_cooldown(symbol)
+
                 ticker = Convert.stream_ticker(response)
                 pair = self[symbol]
 
