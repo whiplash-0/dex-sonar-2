@@ -1,3 +1,4 @@
+import inspect
 import logging
 from datetime import datetime, timedelta
 from typing import Callable, Iterable
@@ -87,7 +88,7 @@ class LivePairs(Pairs):
                 self.callback_on_update(pair)
 
         except Exception:
-            logger.exception('Caught pybit callback exception:'); raise
+            logger.exception(f'Callback `{inspect.currentframe().f_code.co_name}` caught exception'); raise
 
     def _handle_kline_update(self, response: Response):
         try:
@@ -106,7 +107,7 @@ class LivePairs(Pairs):
                 )
 
         except Exception:
-            logger.exception('Caught pybit callback exception:'); raise
+            logger.exception(f'Callback `{inspect.currentframe().f_code.co_name}` caught exception'); raise
 
     def _update_candles(self):
         for symbol in self.get_symbols(): self._update_candle(symbol)
