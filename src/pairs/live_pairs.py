@@ -35,7 +35,7 @@ class LivePairs(Pairs):
 
         self.requests = unified_trading.HTTP(testnet=False)
         self.websocket = unified_trading.WebSocket(testnet=False, channel_type=CATEGORY)
-        self.updating_tasks = AsyncTasks(self._run_loop_update_instruments_info(poll_interval=update_frequency_instruments_info))
+        self.updating_tasks = AsyncTasks(self._task_update_instruments_info(poll_interval=update_frequency_instruments_info))
         self.price_updates_cooldowns: Cooldowns[Symbol] = Cooldowns(cooldown=update_frequency_price)
 
         self.are_websocket_callbacks_enabled = False
@@ -143,7 +143,7 @@ class LivePairs(Pairs):
         except Exception:
             logger.exception(f'Callback `{inspect.currentframe().f_code.co_name}` caught exception'); raise
 
-    async def _run_loop_update_instruments_info(self, poll_interval: timedelta):
+    async def _task_update_instruments_info(self, poll_interval: timedelta):
         try:
             while True:
                 start = pytime.monotonic()
