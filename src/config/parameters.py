@@ -1,6 +1,7 @@
 from os import environ
 
 from src.config.config import CONFIG
+from src.pairs.pair import Contract
 from src.utils import utils
 
 
@@ -12,7 +13,13 @@ SILENT_BOT_TOKEN = environ.get('SILENT_BOT_TOKEN' if PROD_MODE else 'TEST_SILENT
 
 USER_ID = int(environ.get('USER_ID'))
 
-PAIRS = 100 if PROD_MODE else 5
+PAIRS_FILTER = (
+    lambda pairs: [
+        x for x in pairs if
+        x.contract is Contract.USDT and
+        x.turnover >= 5_000_000
+    ]
+)
 
 class SpikeDetector:
     THRESHOLD_FUNCTION =(

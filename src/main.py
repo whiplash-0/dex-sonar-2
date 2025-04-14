@@ -12,7 +12,7 @@ from src.core.message import SpikeMessage
 from src.core.spike_detector import Mode, Spike, SpikeDetector
 from src.pairs import live_pairs
 from src.pairs.live_pairs import LivePairs
-from src.pairs.pair import Contract, Pair
+from src.pairs.pair import Pair
 from src.support import logs
 from src.utils import time
 from src.utils.utils import format_large_number
@@ -37,12 +37,7 @@ class Application:
             update_frequency_price=CONFIG.get_timedelta_from_seconds('Pairs', 'update frequency price'),
             update_frequency_instruments_info=CONFIG.get_timedelta_from_seconds('Pairs', 'update frequency instruments info'),
             callback_on_price_update=self._callback_on_price_update,
-            pairs_filter=(
-                lambda pairs: list(filter(
-                    lambda x: x.contract is Contract.USDT,
-                    pairs.get_sorted_by_turnover(),
-                ))[:parameters.PAIRS]
-            ),
+            pairs_filter=parameters.PAIRS_FILTER,
         )
         self.spike_detector = SpikeDetector(
             max_range=CONFIG.getint('Spike detector', 'max range'),
