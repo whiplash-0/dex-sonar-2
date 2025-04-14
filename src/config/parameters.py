@@ -17,7 +17,7 @@ PAIRS_FILTER = (
     lambda pairs: [
         x for x in pairs if
         x.contract is Contract.USDT and
-        x.turnover >= 5_000_000
+        x.turnover >= CONFIG.getfloat('Pairs', 'min turnover', default=0)
     ]
 )
 
