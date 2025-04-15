@@ -46,7 +46,7 @@ class Application:
             prefer=Prefer.MAX_CHANGE,
             cooldown=CONFIG.get_timedelta_from_minutes('Spike detector', 'cooldown'),
         )
-        self.tasks = AsyncTasks(
+        self.permanent_tasks = AsyncTasks(
             self.task_update_pairs(),
             self.task_update_bot_status(poll_interval=timedelta(minutes=1)),
             self.task_detect_spikes(),
@@ -57,7 +57,7 @@ class Application:
     def run(self):
         logger.info('Bot started')
         logger.info(f'Pairs ({len(self.pairs)}, turnover > ${format_large_number(self.pairs.get_sorted_by_turnover()[-1].turnover)}): ' + ', '.join([x.pretty_symbol for x in self.pairs]))
-        asyncio.run(self.bot.run(self.tasks.run(blocking=True)))
+        asyncio.run(self.bot.run(self.permanent_tasks.run(blocking=True)))
         logger.info('Bot stopped')
 
     async def task_update_pairs(self):
@@ -91,7 +91,7 @@ class Application:
     def _callback_on_price_update(self, pair: Pair):
         if spike := self.spike_detector.detect(pair):
             logger.info(f'{pair.pretty_symbol}: {spike.change:+.1%}')
-            self.tasks.run_coroutine_threadsafe(self.queue.put((pair, spike)))
+            self.permanent_tasks.run_coroutine_threadsafe(self.queue.put((pair, spike)))
 
     async def _callback_on_price_update_async(self, pair: Pair, spike: Spike):
         message = SpikeMessage(
