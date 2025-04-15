@@ -7,7 +7,7 @@ from typing import Callable, Iterable
 
 from pybit import unified_trading
 
-from src.core.async_tasks import AsyncTasks
+from src.core.async_tasks import AsyncPollingTasks
 from src.pairs.pair import Pair, Symbol, TimeSeries
 from src.pairs.pairs import Pairs
 from src.pairs.pybit_converters import Convert, InstrumentInfo, Response
@@ -29,9 +29,9 @@ class LivePairs(Pairs):
     def __init__(
             self,
             update_frequency_price: timedelta = timedelta(seconds=5),
-            poll_interval_update_instruments_info: timedelta = timedelta(seconds=60),
-            poll_interval_monitor_websocket_liveness: timedelta = timedelta(seconds=10),
-            poll_interval_distribute_update_cooldowns_uniformly: timedelta = timedelta(seconds=30),
+            polling_interval_update_instruments_info: timedelta = timedelta(seconds=60),
+            polling_interval_monitor_websocket_liveness: timedelta = timedelta(seconds=10),
+            polling_interval_distribute_update_cooldowns_uniformly: timedelta = timedelta(seconds=30),
             callback_on_price_update: Callable[[Pair], None] = lambda _: None,
             pairs_filter: Callable[[list[Pair]], Iterable[Pair]] = lambda _: _,
     ):
@@ -42,10 +42,10 @@ class LivePairs(Pairs):
 
         self.requests = unified_trading.HTTP(testnet=False)
         self.websocket = unified_trading.WebSocket(testnet=False, channel_type=CATEGORY)
-        self.permanent_tasks = AsyncTasks(
-            self._task_monitor_websocket_liveness(poll_interval=poll_interval_monitor_websocket_liveness),
-            self._task_distribute_update_cooldowns_uniformly(poll_interval=poll_interval_distribute_update_cooldowns_uniformly),
-            self._task_update_instruments_info(poll_interval=poll_interval_update_instruments_info),
+        self.permanent_tasks = AsyncPollingTasks(
+            (self._polling_task_monitor_websocket_liveness, polling_interval_monitor_websocket_liveness),
+            (self._polling_task_distribute_update_cooldowns_uniformly, polling_interval_distribute_update_cooldowns_uniformly),
+            (self._polling_task_update_instruments_info, polling_interval_update_instruments_info),
         )
         self.price_updates_cooldowns: Cooldowns[Symbol] = Cooldowns(cooldown=update_frequency_price)
 
@@ -154,31 +154,21 @@ class LivePairs(Pairs):
         except Exception:
             logger.exception(f'Callback `{inspect.currentframe().f_code.co_name}` caught exception'); raise
 
-    async def _task_monitor_websocket_liveness(self, poll_interval: timedelta):
-        while True:
-            if not self.websocket.is_connected(): raise WebsocketConnectionLostError()
-            await asyncio.sleep(poll_interval.total_seconds())
+    async def _polling_task_monitor_websocket_liveness(self):
+        if not self.websocket.is_connected(): raise WebsocketConnectionLostError()
 
-    async def _task_distribute_update_cooldowns_uniformly(self, poll_interval: timedelta):
-        while True:
-            self._disable_websocket_callbacks()
+    async def _polling_task_distribute_update_cooldowns_uniformly(self):
+        self._disable_websocket_callbacks()
 
-            timestamp = time.get_timestamp()
-            delta = self.update_frequency_price / (len(self) - 1) if len(self) > 1 else timedelta(0)
-            for i, x in enumerate(self.pairs): self.price_updates_cooldowns.set_start_for(x, timestamp + delta * i - self.price_updates_cooldowns.get_cooldown())
+        timestamp = time.get_timestamp()
+        delta = self.update_frequency_price / (len(self) - 1) if len(self) > 1 else timedelta(0)
+        for i, x in enumerate(self.pairs): self.price_updates_cooldowns.set_start_for(x, timestamp + delta * i - self.price_updates_cooldowns.get_cooldown())
 
-            self._enable_websocket_callbacks()
-            await asyncio.sleep(poll_interval.total_seconds())
+        self._enable_websocket_callbacks()
 
-    async def _task_update_instruments_info(self, poll_interval: timedelta):
-        while True:
-            start = pytime.monotonic()
-            instruments_info = self._get_instruments_info()
-
-            for symbol, pair in self.pairs.items():
-                pair.funding_interval = instruments_info[symbol].funding_interval
-
-            await asyncio.sleep(max(poll_interval.total_seconds() - (pytime.monotonic() - start), 0))
+    async def _polling_task_update_instruments_info(self):
+        instruments_info = self._get_instruments_info()
+        for symbol, pair in self.pairs.items(): pair.funding_interval = instruments_info[symbol].funding_interval
 
     def _get_instruments_info(self) -> dict[Symbol, InstrumentInfo]:
         return {x.symbol: x for x in Convert.get_instruments_info(self.requests.get_instruments_info(

@@ -34,7 +34,7 @@ class Application:
         )
         self.pairs = LivePairs(
             update_frequency_price=CONFIG.get_timedelta_from_seconds('Pairs', 'update frequency price'),
-            poll_interval_update_instruments_info=CONFIG.get_timedelta_from_seconds('Pairs', 'update frequency instruments info'),
+            polling_interval_update_instruments_info=CONFIG.get_timedelta_from_seconds('Pairs', 'update frequency instruments info'),
             callback_on_price_update=self._callback_on_price_update,
             pairs_filter=parameters.PAIRS_FILTER,
         )
