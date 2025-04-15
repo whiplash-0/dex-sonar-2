@@ -1,5 +1,4 @@
 import asyncio
-import inspect
 import logging
 import os
 from datetime import datetime, timedelta
@@ -78,20 +77,13 @@ class Application:
                 )
                 await asyncio.sleep(poll_interval.total_seconds())
 
-        except asyncio.CancelledError:
-            logger.debug(f'Task `{inspect.currentframe().f_code.co_name}` was cancelled'); raise
-
         finally:
             await self.bot.remove_description()
 
     async def task_detect_spikes(self):
-        try:
-            while True:
-                await self._callback_on_price_update_async(*(await self.queue.get()))
-                logger.debug(f'Spike detection callback executed. Left: {self.queue.qsize()}')
-
-        except asyncio.CancelledError:
-            logger.debug(f'Task `{inspect.currentframe().f_code.co_name}` was cancelled'); raise
+        while True:
+            await self._callback_on_price_update_async(*(await self.queue.get()))
+            logger.debug(f'Spike detection callback executed. Left: {self.queue.qsize()}')
 
     def _callback_on_price_update(self, pair: Pair):
         if spike := self.spike_detector.detect(pair):
@@ -100,8 +92,8 @@ class Application:
 
     async def _callback_on_price_update_async(self, pair: Pair, spike: Spike):
         message = SpikeMessage(
-            pair,
-            spike,
+            pair=pair,
+            spike=spike,
             timezone=CONFIG.get_timezone('Chart', 'timezone')
         )
         await self.bot.send_message(
