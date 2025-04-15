@@ -9,7 +9,7 @@ from src.config.config import CONFIG
 from src.core.async_tasks import AsyncTasks
 from src.core.bot import Bot
 from src.core.message import SpikeMessage
-from src.core.spike_detector import Mode, Prefer, Spike, SpikeDetector
+from src.core.spike_detector import Catch, Prefer, Spike, SpikeDetector
 from src.pairs import live_pairs
 from src.pairs.live_pairs import LivePairs
 from src.pairs.pair import Pair
@@ -43,7 +43,7 @@ class Application:
             max_range=CONFIG.getint('Spike detector', 'max range'),
             threshold_function=parameters.SpikeDetector.THRESHOLD_FUNCTION,
             turnover_multiplier=parameters.SpikeDetector.TURNOVER_MULTIPLIER,
-            mode=Mode.UPSPIKE,
+            catch=Catch.UPSPIKES_ONLY,
             prefer=Prefer.MAX_CHANGE,
             cooldown=CONFIG.get_timedelta_from_minutes('Spike detector', 'cooldown'),
         )

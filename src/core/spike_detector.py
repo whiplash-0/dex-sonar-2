@@ -19,10 +19,10 @@ class Spike:
     end: Index
 
 
-class Mode(Enum):
-    BOTH = auto()
-    UPSPIKE = auto()
-    DOWNSPIKE = auto()
+class Catch(Enum):
+    ALL_SPIKES = auto()
+    UPSPIKES_ONLY = auto()
+    DOWNSPIKES_ONLY = auto()
 
 
 class Prefer(Enum):
@@ -36,14 +36,14 @@ class SpikeDetector:
             max_range: Range,
             threshold_function: Callable[[Range], Change],
             turnover_multiplier: Callable[[Turnover], float] = lambda _: 1,
-            mode: Mode = Mode.BOTH,
+            catch: Catch = Catch.ALL_SPIKES,
             prefer: Prefer = Prefer.MAX_CHANGE,
             cooldown: timedelta = timedelta(),
     ):
         self.max_range = max_range
         self.threshold_function = threshold_function
         self.turnover_multiplier = turnover_multiplier
-        self.mode = mode
+        self.catch = catch
         self.prefer = prefer
         self.pairs_cooldowns = Cooldowns(cooldown=cooldown)
 
@@ -55,10 +55,11 @@ class SpikeDetector:
             actual_max_range = min(self.max_range, len(prices) - 1)  # avoid having max range longer than actual range
             changes = [(pair.price - x) / x for x in prices[-2:-(actual_max_range + 1) - 1:-1]]  # from first change (2-nd candle) to last
 
-            if self.mode is not Mode.BOTH:  # trick to make Mode work and include only relevant changes
-                changes = [max(x, 0) if self.mode is Mode.UPSPIKE else min(x, 0) for x in changes]
+            if self.catch is not Catch.ALL_SPIKES:  # trick to make Mode work and include only relevant changes
+                changes = [max(x, 0) if self.catch is Catch.UPSPIKES_ONLY else min(x, 0) for x in changes]
 
             thresholds = [self.threshold_function(1 + i) * self.turnover_multiplier(pair.turnover) for i in range(len(changes))]  # align ordinal with minute duration that function accepts by adding 1
+
 
             # find indices where changes are above corresponding thresholds
             absolute_changes = [abs(x) for x in changes]
