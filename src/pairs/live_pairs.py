@@ -31,10 +31,12 @@ class LivePairs(Pairs):
             update_frequency_price: timedelta = timedelta(seconds=5),
             update_frequency_instruments_info: timedelta = timedelta(seconds=60),
             poll_interval_monitor_websocket_liveness: timedelta = timedelta(seconds=10),
+            poll_interval_distribute_update_cooldowns_uniformly: timedelta = timedelta(seconds=30),
             callback_on_price_update: Callable[[Pair], None] = lambda _: None,
             pairs_filter: Callable[[list[Pair]], Iterable[Pair]] = lambda _: _,
     ):
         super().__init__()
+        self.update_frequency_price = update_frequency_price
         self.callback_on_price_update = callback_on_price_update
         self.pairs_filter = pairs_filter
 
@@ -42,6 +44,7 @@ class LivePairs(Pairs):
         self.websocket = unified_trading.WebSocket(testnet=False, channel_type=CATEGORY)
         self.permanent_tasks = AsyncTasks(
             self._task_monitor_websocket_liveness(poll_interval=poll_interval_monitor_websocket_liveness),
+            self._task_distribute_update_cooldowns_uniformly(poll_interval=poll_interval_distribute_update_cooldowns_uniformly),
             self._task_update_instruments_info(poll_interval=update_frequency_instruments_info),
         )
         self.price_updates_cooldowns: Cooldowns[Symbol] = Cooldowns(cooldown=update_frequency_price)
@@ -154,6 +157,17 @@ class LivePairs(Pairs):
     async def _task_monitor_websocket_liveness(self, poll_interval: timedelta):
         while True:
             if not self.websocket.is_connected(): raise WebsocketConnectionLostError()
+            await asyncio.sleep(poll_interval.total_seconds())
+
+    async def _task_distribute_update_cooldowns_uniformly(self, poll_interval: timedelta):
+        while True:
+            self._disable_websocket_callbacks()
+
+            timestamp = time.get_timestamp()
+            delta = self.update_frequency_price / (len(self) - 1) if len(self) > 1 else timedelta(0)
+            for i, x in enumerate(self.pairs): self.price_updates_cooldowns.set_cooldown_start(x, timestamp + delta * i - self.price_updates_cooldowns.get_cooldown())
+
+            self._enable_websocket_callbacks()
             await asyncio.sleep(poll_interval.total_seconds())
 
     async def _task_update_instruments_info(self, poll_interval: timedelta):
