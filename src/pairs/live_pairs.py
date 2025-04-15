@@ -171,18 +171,14 @@ class LivePairs(Pairs):
             await asyncio.sleep(poll_interval.total_seconds())
 
     async def _task_update_instruments_info(self, poll_interval: timedelta):
-        try:
-            while True:
-                start = pytime.monotonic()
-                instruments_info = self._get_instruments_info()
+        while True:
+            start = pytime.monotonic()
+            instruments_info = self._get_instruments_info()
 
-                for symbol, pair in self.pairs.items():
-                    pair.funding_interval = instruments_info[symbol].funding_interval
+            for symbol, pair in self.pairs.items():
+                pair.funding_interval = instruments_info[symbol].funding_interval
 
-                await asyncio.sleep(max(poll_interval.total_seconds() - (pytime.monotonic() - start), 0))
-
-        except asyncio.CancelledError:
-            logger.debug(f'Task `{inspect.currentframe().f_code.co_name}` was cancelled'); raise
+            await asyncio.sleep(max(poll_interval.total_seconds() - (pytime.monotonic() - start), 0))
 
     def _get_instruments_info(self) -> dict[Symbol, InstrumentInfo]:
         return {x.symbol: x for x in Convert.get_instruments_info(self.requests.get_instruments_info(
