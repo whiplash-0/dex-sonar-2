@@ -28,8 +28,8 @@ class WebsocketConnectionLostError(ConnectionError):
 class LivePairs(Pairs):
     def __init__(
             self,
-            update_frequency_price: timedelta,
-            update_frequency_instruments_info: timedelta,
+            update_frequency_price: timedelta = timedelta(seconds=5),
+            update_frequency_instruments_info: timedelta = timedelta(minutes=1),
             callback_on_price_update: Callable[[Pair], None] = lambda _: None,
             pairs_filter: Callable[[list[Pair]], Iterable[Pair]] = lambda _: _,
     ):
