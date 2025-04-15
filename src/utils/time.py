@@ -24,13 +24,19 @@ T = TypeVar('T', bound=Hashable)
 class Cooldowns(Generic[T]):
     def __init__(self, cooldown: timedelta):
         self.cooldown = cooldown
-        self.cooldowns_starts: dict[T, datetime] = {}
+        self.cooldown_starts: dict[T, datetime] = {}
+
+    def get_cooldown(self):
+        return self.cooldown
 
     def set_cooldown(self, key: T):
-        self.cooldowns_starts[key] = get_timestamp()
+        self.cooldown_starts[key] = get_timestamp()
+
+    def set_cooldown_start(self, key: T, timestamp: datetime):
+        self.cooldown_starts[key] = timestamp
 
     def is_in_cooldown(self, key: T) -> bool:
-        return get_time_passed_since(self.cooldowns_starts.get(key, MIN_TIMESTAMP)) <= self.cooldown
+        return get_time_passed_since(self.cooldown_starts.get(key, MIN_TIMESTAMP)) <= self.cooldown
 
 
 @dataclass
