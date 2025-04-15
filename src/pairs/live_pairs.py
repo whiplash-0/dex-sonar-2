@@ -29,7 +29,8 @@ class LivePairs(Pairs):
     def __init__(
             self,
             update_frequency_price: timedelta = timedelta(seconds=5),
-            update_frequency_instruments_info: timedelta = timedelta(minutes=1),
+            update_frequency_instruments_info: timedelta = timedelta(seconds=60),
+            poll_interval_monitor_websocket_liveness: timedelta = timedelta(seconds=10),
             callback_on_price_update: Callable[[Pair], None] = lambda _: None,
             pairs_filter: Callable[[list[Pair]], Iterable[Pair]] = lambda _: _,
     ):
@@ -40,7 +41,7 @@ class LivePairs(Pairs):
         self.requests = unified_trading.HTTP(testnet=False)
         self.websocket = unified_trading.WebSocket(testnet=False, channel_type=CATEGORY)
         self.permanent_tasks = AsyncTasks(
-            self._task_monitor_websocket_connection(poll_interval=timedelta(seconds=10)),
+            self._task_monitor_websocket_liveness(poll_interval=poll_interval_monitor_websocket_liveness),
             self._task_update_instruments_info(poll_interval=update_frequency_instruments_info),
         )
         self.price_updates_cooldowns: Cooldowns[Symbol] = Cooldowns(cooldown=update_frequency_price)
@@ -150,7 +151,7 @@ class LivePairs(Pairs):
         except Exception:
             logger.exception(f'Callback `{inspect.currentframe().f_code.co_name}` caught exception'); raise
 
-    async def _task_monitor_websocket_connection(self, poll_interval: timedelta):
+    async def _task_monitor_websocket_liveness(self, poll_interval: timedelta):
         while True:
             if not self.websocket.is_connected(): raise WebsocketConnectionLostError()
             await asyncio.sleep(poll_interval.total_seconds())
