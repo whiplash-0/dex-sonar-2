@@ -16,15 +16,16 @@ class AsyncTasks:
     In the case of non-blocking run, exceptions should be handled at the individual task level.
     If an exception occurs, all other related tasks should be cancelled accordingly, this won't be done automatically
     """
-    def __init__(self, *tasks: Coroutine):
-        self.tasks: list[asyncio.Task] | tuple[Coroutine] = tasks
+    def __init__(self, *coroutines: Coroutine):
+        self.coroutines = coroutines
+        self.tasks: list[asyncio.Task] = []
         self.loop: Optional[asyncio.AbstractEventLoop] = None
         self._are_cancelled = False
 
     async def run(self, blocking=False):
         try:
             self.loop = asyncio.get_event_loop()
-            self.tasks = [asyncio.create_task(x) for x in self.tasks]
+            self.tasks = [asyncio.create_task(x) for x in self.coroutines]
             if blocking: await asyncio.gather(*self.tasks)
 
         except asyncio.CancelledError:
