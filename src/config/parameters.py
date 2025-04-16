@@ -25,7 +25,7 @@ class SpikeDetector:
     THRESHOLD_FUNCTION =(
         utils.create_linear_piecewise_interpolation((1, 0.035), (5, 0.05), (10, 0.06), (30, 0.08))
         if PROD_MODE else
-        lambda _: 0.001
+        lambda _: 0
     )
     TURNOVER_MULTIPLIER = utils.create_turnover_based_log_scaling(
         base=1e9,
