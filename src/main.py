@@ -85,15 +85,15 @@ class Application:
 
     def _callback_on_price_update(self, pair: Pair):
         if spike := self.spike_detector.detect(pair):
-            logger.info(f'{pair.pretty_symbol}: {spike.change:+.1%}')
+            logger.info(f'{pair.pretty_symbol + ":":>{pair.MAX_BASE_COIN_LEN + 1}} {spike.change:+.1%}')
             self.permanent_tasks.run_coroutine_threadsafe(self.callback_queue.put((pair, spike, time.get_monotonic())))
 
     async def task_call_async_callbacks_from_live_pairs(self):
         while True:
             pair, spike, start_time = await self.callback_queue.get()
-            logger.debug(f'{pair.pretty_symbol}: Switched to async callback in: {time.get_monotonic() - start_time:.1f}s')
+            logger.debug(f'{pair.pretty_symbol + ":":>{pair.MAX_BASE_COIN_LEN + 1}} Delay before callback: {time.get_monotonic() - start_time:.1f}s'); start_time = time.get_monotonic()
             await self._callback_on_price_update_async(pair, spike)
-            logger.debug(f'{pair.pretty_symbol}: Callback executed in: {time.get_monotonic() - start_time:.1f}s. Left: {self.callback_queue.qsize()}')
+            logger.debug(f'{pair.pretty_symbol + ":":>{pair.MAX_BASE_COIN_LEN + 1}} Callback executed in:  {time.get_monotonic() - start_time:.1f}s. Left: {self.callback_queue.qsize()}')
 
     async def _callback_on_price_update_async(self, pair: Pair, spike: Spike):
         message = SpikeMessage(
