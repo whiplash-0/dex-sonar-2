@@ -55,10 +55,6 @@ class Pair:
         return self.symbol[:-4] if self.contract is not Contract.CLASSIC else self.symbol.split('-', 1)[0]
 
     @property
-    def pretty_symbol(self):
-        return self.base_symbol if self.contract is Contract.USDT else self.symbol
-
-    @property
     def price(self):
         return self.prices[-1]
 
