@@ -42,7 +42,7 @@ class SpikeMessage(Message):
         add_line(pair.base_symbol, f'{spike.change:+.1%}/{duration}')
         add_line('Price:', '$' + format_number_by_significant_digits(pair.price, significant_digits=3))
         add_line('Turnover:', '$' + format_large_number(pair.turnover, decimal_places=1, decrease_decimal_places=True))
-        add_line('Funding rate:', format_number_by_significant_digits(pair.funding_rate * 100, significant_digits=1, decimal_places=3) + '%')
+        add_line('Funding rate:', format_number_by_significant_digits(pair.funding_rate_per_day * 100, significant_digits=1, decimal_places=3) + '%')
 
         text = markdown.code('\n'.join(lines)) + '\n' + markdown.code(' ' * 24) + markdown.link('Trade on Bybit', f'https://www.bybit.com/trade/usdt/{pair.symbol}')
 
