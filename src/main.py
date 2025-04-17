@@ -84,7 +84,7 @@ class Application:
             await self.bot.remove_description()
 
     def _callback_on_price_update(self, pair: Pair):
-        if upspike := self.upspike_detector.detect(pair):
+        if (upspike := self.upspike_detector.detect(pair)) and abs(pair.funding_rate_per_day) <= CONFIG.get_percent('Upspike detector', 'max funding rate'):
             logger.info(f'{pair.base_symbol + ":":>{pair.BASE_SYMBOL_MAX_LEN + 1}} {upspike.change:+.1%}')
             self.permanent_tasks.run_coroutine_threadsafe(self.callback_queue.put((pair, upspike, time.get_monotonic())))
 

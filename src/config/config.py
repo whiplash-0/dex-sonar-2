@@ -37,6 +37,12 @@ class Config(RawConfigParser):
         if string := self.get(section, option, **kwargs): return utils.parse_large_number(string, as_type=float)
         else: return default
 
+    def get_percent(self, section, option, default: float = None, **kwargs) -> float | None:
+        """
+        Converts a percent to a fraction
+        """
+        return super().getfloat(section, option, **kwargs) / 100 if super().get(section, option, **kwargs) else default
+
     def get_timedelta_from_seconds(self, section, option, default: timedelta = None, **kwargs) -> timedelta | None:
         return timedelta(seconds=self.getint(section, option, **kwargs)) if self.get(section, option, **kwargs) else default
 
