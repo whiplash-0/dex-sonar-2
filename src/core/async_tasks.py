@@ -30,7 +30,10 @@ class AsyncTasks:
 
         except asyncio.CancelledError:
             logger.debug('Caught `CancelledError`. Cancelling all tasks and waiting for them to complete')
+
+        finally:
             await self.cancel_all()
+
 
     async def cancel_all(self):
         self._are_cancelled = True
