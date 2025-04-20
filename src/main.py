@@ -56,12 +56,13 @@ class Application:
 
     def run(self):
         logger.info('Bot started')
-        logger.info(f'Pairs ({len(self.pairs)}, turnover > ${format_large_number(self.pairs.get_sorted_by_turnover()[-1].turnover)}): ' + ', '.join([x.base_symbol for x in self.pairs]))
         asyncio.run(self.bot.run(self.permanent_tasks.run(blocking=True)))
         logger.info('Bot stopped')
 
     async def task_update_pairs(self):
         try:
+            await self.pairs.load_pairs()
+            logger.info(f'Pairs ({len(self.pairs)}, turnover > ${format_large_number(self.pairs.get_sorted_by_turnover()[-1].turnover)}): ' + ', '.join([x.base_symbol for x in self.pairs]))
             await self.pairs.start_live_updates()
 
         except live_pairs.WebsocketConnectionLostError:
