@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import time as pytime
+from abc import ABC, abstractmethod
 from datetime import timedelta
 from typing import Callable, Coroutine, Optional
 
@@ -11,33 +12,44 @@ logger = logging.getLogger(__name__)
 RawCoroutine = Callable[[], Coroutine]
 
 
-class AsyncSequentialTasks:
+class AsyncTasksBase(ABC):
     def __init__(self, *coroutines: Coroutine):
         self.coroutines = coroutines
-        self.loop: Optional[asyncio.AbstractEventLoop] = None
+        self.event_loop: Optional[asyncio.AbstractEventLoop] = None
+
+    @abstractmethod
+    async def run(self):
+        pass
+
+    def schedule_task_in_async_thread(self, coroutine: Coroutine):
+        asyncio.run_coroutine_threadsafe(coroutine, loop=self.event_loop)
+
+    def _set_event_loop(self):
+        self.event_loop = asyncio.get_event_loop()
+
+
+class AsyncSequentialTasks(AsyncTasksBase):
+    def __init__(self, *coroutines: Coroutine):
+        super().__init__(*coroutines)
 
     async def run(self):
-        self.loop = asyncio.get_event_loop()
+        self._set_event_loop()
         for x in self.coroutines: await x
 
-    def schedule_coroutine_in_async_thread(self, coroutine: Coroutine):
-        asyncio.run_coroutine_threadsafe(coroutine, loop=self.loop)
 
-
-class AsyncConcurrentTasks:
+class AsyncConcurrentTasks(AsyncTasksBase):
     """
     In the case of non-blocking run, exceptions should be handled at the individual task level.
     If an exception occurs, all other related tasks should be cancelled accordingly, this won't be done automatically
     """
     def __init__(self, *coroutines: Coroutine):
-        self.coroutines = coroutines
+        super().__init__(*coroutines)
         self.tasks: list[asyncio.Task] = []
-        self.loop: Optional[asyncio.AbstractEventLoop] = None
         self._are_cancelled = False
 
     async def run(self, blocking=False):
         try:
-            self.loop = asyncio.get_event_loop()
+            self._set_event_loop()
             self.tasks = [asyncio.create_task(x) for x in self.coroutines]
             if blocking: await asyncio.gather(*self.tasks)
 
@@ -46,7 +58,6 @@ class AsyncConcurrentTasks:
 
         finally:
             await self.cancel_all()
-
 
     async def cancel_all(self):
         self._are_cancelled = True
@@ -58,9 +69,6 @@ class AsyncConcurrentTasks:
 
     def are_cancelled(self):
         return self._are_cancelled
-
-    def run_coroutine_threadsafe(self, coro: Coroutine):
-        asyncio.run_coroutine_threadsafe(coro, self.loop)
 
 
 class AsyncConcurrentPollingTasks(AsyncConcurrentTasks):

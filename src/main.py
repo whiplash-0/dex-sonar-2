@@ -95,7 +95,7 @@ class Application:
     def _callback_on_price_update(self, pair: Pair):
         if (upspike := self.upspike_detector.detect(pair)) and abs(pair.funding_rate_per_day) <= CONFIG.get_percent('Upspike detector', 'max funding rate'):
             logger.info(f'{pair.base_symbol + ":":>{pair.BASE_SYMBOL_MAX_LEN + 1}} {upspike.change:+.1%}')
-            self.tasks.schedule_coroutine_in_async_thread(self.callback_queue.put((pair, upspike, time.get_monotonic())))
+            self.tasks.schedule_task_in_async_thread(self.callback_queue.put((pair, upspike, time.get_monotonic())))
 
     async def task_call_async_callbacks_from_live_pairs(self):
         while True:
