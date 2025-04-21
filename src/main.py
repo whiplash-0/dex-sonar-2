@@ -51,9 +51,9 @@ class Application:
             self.init(),
             self.bot.run(
                 AsyncConcurrentTasks(
-                    self.task_update_pairs(),
                     self.task_update_bot_status(polling_interval=timedelta(minutes=1)),
-                    self.task_call_async_callbacks_from_live_pairs(),
+                    self.task_update_pairs(),
+                    self.task_handle_callbacks_from_live_pairs(),
                 ).run(blocking=True)
             ),
         )
@@ -98,7 +98,7 @@ class Application:
             logger.info(f'{pair.base_symbol + ":":>{pair.BASE_SYMBOL_MAX_LEN + 1}} {upspike.change:+.1%}')
             self.tasks.schedule_task_in_async_thread(self.callback_queue.put((pair, upspike, time.get_monotonic())))
 
-    async def task_call_async_callbacks_from_live_pairs(self):
+    async def task_handle_callbacks_from_live_pairs(self):
         while True:
             pair, upspike, start_time = await self.callback_queue.get()
             logger.debug(f'{pair.base_symbol + ":":>{pair.BASE_SYMBOL_MAX_LEN + 1}} Delay before callback: {time.get_monotonic() - start_time:.1f}s'); start_time = time.get_monotonic()
