@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 from src.config import parameters
 from src.config.config import CONFIG
-from src.core.async_tasks import AsyncConcurrentTasks
+from src.core.async_tasks import AsyncConcurrentTasks, AsyncSequentialTasks
 from src.core.custom_bot import CustomBot
 from src.core.message import SpikeMessage
 from src.core.spike_detector import Catch, Prefer, Spike, SpikeDetector
@@ -47,23 +47,30 @@ class Application:
             prefer=Prefer.MAX_CHANGE,
             cooldown=CONFIG.get_timedelta_from_minutes('Upspike detector', 'cooldown'),
         )
-        self.permanent_tasks = AsyncConcurrentTasks(
-            self.task_update_pairs(),
-            self.task_update_bot_status(polling_interval=timedelta(minutes=1)),
-            self.task_call_async_callbacks_from_live_pairs(),
+        self.tasks = AsyncSequentialTasks(
+            self.init(),
+            self.bot.run(
+                AsyncConcurrentTasks(
+                    self.task_update_pairs(),
+                    self.task_update_bot_status(polling_interval=timedelta(minutes=1)),
+                    self.task_call_async_callbacks_from_live_pairs(),
+                ).run(blocking=True)
+            ),
         )
         self.start_time = time.get_timestamp()
         self.callback_queue = asyncio.Queue()
 
     def run(self):
         logger.info('Bot started')
-        asyncio.run(self.bot.run(self.permanent_tasks.run(blocking=True)))
+        asyncio.run(self.tasks.run())
         logger.info('Bot stopped')
+
+    async def init(self):
+        await self.pairs.load_pairs()
+        logger.info(f'Pairs ({len(self.pairs)}, turnover > ${format_large_number(self.pairs.get_sorted_by_turnover()[-1].turnover)}): ' + ', '.join([x.base_symbol for x in self.pairs]))
 
     async def task_update_pairs(self):
         try:
-            await self.pairs.load_pairs()
-            logger.info(f'Pairs ({len(self.pairs)}, turnover > ${format_large_number(self.pairs.get_sorted_by_turnover()[-1].turnover)}): ' + ', '.join([x.base_symbol for x in self.pairs]))
             await self.pairs.start_live_updates()
 
         except live_pairs.WebsocketConnectionLostError:
@@ -88,7 +95,7 @@ class Application:
     def _callback_on_price_update(self, pair: Pair):
         if (upspike := self.upspike_detector.detect(pair)) and abs(pair.funding_rate_per_day) <= CONFIG.get_percent('Upspike detector', 'max funding rate'):
             logger.info(f'{pair.base_symbol + ":":>{pair.BASE_SYMBOL_MAX_LEN + 1}} {upspike.change:+.1%}')
-            self.permanent_tasks.run_coroutine_threadsafe(self.callback_queue.put((pair, upspike, time.get_monotonic())))
+            self.tasks.schedule_coroutine_in_async_thread(self.callback_queue.put((pair, upspike, time.get_monotonic())))
 
     async def task_call_async_callbacks_from_live_pairs(self):
         while True:
