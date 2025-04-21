@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from src.config import parameters
 from src.config.config import CONFIG
 from src.core.async_tasks import AsyncTasks
-from src.core.bot import Bot
+from src.core.custom_bot import CustomBot
 from src.core.message import SpikeMessage
 from src.core.spike_detector import Catch, Prefer, Spike, SpikeDetector
 from src.pairs import live_pairs
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class Application:
     def __init__(self):
-        self.bot = Bot(
+        self.bot = CustomBot(
             token=parameters.BOT_TOKEN,
             token_silent=parameters.SILENT_BOT_TOKEN,
             whitelist=[parameters.USER_ID],

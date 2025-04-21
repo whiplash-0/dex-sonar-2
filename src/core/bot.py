@@ -1,13 +1,15 @@
-import logging
 from io import BytesIO
 from typing import Coroutine, Iterable
 
-from telegram import Bot as TelegramBot, InlineKeyboardButton, InlineKeyboardMarkup, LinkPreviewOptions, ReplyKeyboardMarkup, Update
+from telegram import Bot as TelegramBot, InlineKeyboardMarkup, LinkPreviewOptions
 from telegram.constants import ParseMode
-from telegram.ext import ApplicationBuilder, ApplicationHandlerStop, BaseHandler, CommandHandler, ContextTypes, Defaults, TypeHandler
+from telegram.ext import ApplicationBuilder, BaseHandler, Defaults
 
 
-logger = logging.getLogger(__name__)
+DEFAULTS = Defaults(
+    parse_mode=ParseMode.MARKDOWN_V2,
+    link_preview_options=LinkPreviewOptions(is_disabled=True),
+)
 
 
 Token = str
@@ -17,21 +19,16 @@ ImageBuffer = BytesIO
 
 
 class Bot:
-    def __init__(self, token: Token, token_silent: Token, whitelist: Iterable[UserID]):
-        defaults = Defaults(
-            parse_mode=ParseMode.MARKDOWN_V2,
-            link_preview_options=LinkPreviewOptions(is_disabled=True),
-        )
-        self.application = ApplicationBuilder().token(token).defaults(defaults).build()
-        self.application_silent = ApplicationBuilder().token(token_silent).defaults(defaults).build()
+    def __init__(self, token: Token, token_silent: Token):
+        self.application = ApplicationBuilder().token(token).defaults(DEFAULTS).build()
+        self.application_silent = ApplicationBuilder().token(token_silent).defaults(DEFAULTS).build()
         self.bot: TelegramBot = self.application.bot
         self.bot_silent: TelegramBot = self.application_silent.bot
-        self.whitelist = whitelist
-        self._init()
 
-    def _init(self):
-        self._add_handlers(TypeHandler(Update, self._authorize_access), group=0)  # whitelist
-        self._add_handlers(CommandHandler('start', self._start), group=1)
+    def add_handlers(self, handlers: BaseHandler | Iterable[BaseHandler], group=None):
+        if isinstance(handlers, BaseHandler): handlers = [handlers]
+        for x in [self.application, self.application_silent]:
+            x.add_handlers(handlers, **({'group': group} if group is not None else {}))
 
     async def run(self, coro: Coroutine):
         await self.application.initialize()
@@ -83,27 +80,3 @@ class Bot:
     async def remove_description(self):
         await self.bot.set_my_short_description(None)
         await self.bot_silent.set_my_short_description(None)
-
-    def _add_handlers(self, handlers: BaseHandler | Iterable[BaseHandler], group=None):
-        if isinstance(handlers, BaseHandler): handlers = [handlers]
-        for x in [self.application, self.application_silent]:
-            x.add_handlers(handlers, **({'group': group} if group is not None else {}))
-
-    async def _authorize_access(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        user = update.effective_user
-
-        if user.id not in self.whitelist:
-            if update.message:
-                update_repr = f'Message: {update.message.text}'
-            elif update.my_chat_member:
-                update_repr = f'New member status: {update.my_chat_member.new_chat_member.status}'
-            else:
-                update_repr = f'Update: {update}'
-
-            logger.warning(f'Unauthorized access from: {user.full_name} @{user.username if user.username else ""} #{user.id}. {update_repr}')
-            raise ApplicationHandlerStop
-
-    @staticmethod
-    async def _start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        markup = ReplyKeyboardMarkup([[InlineKeyboardButton('Menu', callback_data='menu')]], resize_keyboard=True)
-        await update.message.reply_text(text='Menu has been pinned to your input area', reply_markup=markup)
