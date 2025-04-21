@@ -11,6 +11,19 @@ logger = logging.getLogger(__name__)
 RawCoroutine = Callable[[], Coroutine]
 
 
+class AsyncSequentialTasks:
+    def __init__(self, *coroutines: Coroutine):
+        self.coroutines = coroutines
+        self.loop: Optional[asyncio.AbstractEventLoop] = None
+
+    async def run(self):
+        self.loop = asyncio.get_event_loop()
+        for x in self.coroutines: await x
+
+    def schedule_coroutine_in_async_thread(self, coroutine: Coroutine):
+        asyncio.run_coroutine_threadsafe(coroutine, loop=self.loop)
+
+
 class AsyncConcurrentTasks:
     """
     In the case of non-blocking run, exceptions should be handled at the individual task level.
