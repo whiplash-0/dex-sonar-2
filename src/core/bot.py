@@ -30,12 +30,7 @@ class Bot:
         self._init()
 
     def _init(self):
-        self.add_handlers(TypeHandler(Update, self._authorize_access), group=0)
-
-    def add_handlers(self, handlers: BaseHandler | Iterable[BaseHandler], group=None):
-        if isinstance(handlers, BaseHandler): handlers = [handlers]
-        for x in [self.application, self.application_silent]:
-            x.add_handlers(handlers, **({'group': group} if group is not None else {}))
+        self._add_handlers(TypeHandler(Update, self._authorize_access), group=0)  # whitelist
 
     async def run(self, coro: Coroutine):
         await self.application.initialize()
@@ -88,9 +83,21 @@ class Bot:
         await self.bot.set_my_short_description(None)
         await self.bot_silent.set_my_short_description(None)
 
+    def _add_handlers(self, handlers: BaseHandler | Iterable[BaseHandler], group=None):
+        if isinstance(handlers, BaseHandler): handlers = [handlers]
+        for x in [self.application, self.application_silent]:
+            x.add_handlers(handlers, **({'group': group} if group is not None else {}))
+
     async def _authorize_access(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user = update.effective_user
 
         if user.id not in self.whitelist:
-            logger.warning(f'Unauthorized access from: {user.full_name} @{user.username if user.username else ""} #{user.id}')
+            if update.message:
+                update_repr = f'Message: {update.message.text}'
+            elif update.my_chat_member:
+                update_repr = f'New member status: {update.my_chat_member.new_chat_member.status}'
+            else:
+                update_repr = f'Update: {update}'
+
+            logger.warning(f'Unauthorized access from: {user.full_name} @{user.username if user.username else ""} #{user.id}. {update_repr}')
             raise ApplicationHandlerStop
