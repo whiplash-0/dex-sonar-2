@@ -49,7 +49,7 @@ class LivePairs(Pairs):
         self.price_updates_cooldowns: Cooldowns[Symbol] = Cooldowns(cooldown=update_frequency_price)
         self.are_websocket_callbacks_enabled = False
 
-    async def load_pairs(self):
+    async def init(self):
         pairs = Pairs()
         tickers = Convert.get_tickers(self.requests.get_tickers(category=CATEGORY))
         instruments_info = await self._get_instruments_info()

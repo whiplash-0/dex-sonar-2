@@ -66,9 +66,9 @@ class Application:
         logger.info('Bot stopped')
 
     async def init(self):
-        await self.pairs.load_pairs()
-        logger.info(f'Pairs ({len(self.pairs)}, turnover > ${format_large_number(self.pairs.get_sorted_by_turnover()[-1].turnover)}): ' + ', '.join([x.base_symbol for x in self.pairs]))
+        await self.pairs.init()
         await self.bot.init()
+        logger.info(f'Pairs ({len(self.pairs)}, turnover > ${format_large_number(self.pairs.get_sorted_by_turnover()[-1].turnover)}): ' + ', '.join([x.base_symbol for x in self.pairs]))
 
     async def task_update_pairs(self):
         try:
