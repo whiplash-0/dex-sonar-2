@@ -1,3 +1,4 @@
+import subprocess
 from os import environ
 
 from src.config.config import CONFIG
@@ -10,6 +11,21 @@ PROD_MODE = not TEST_MODE
 
 BOT_TOKEN = environ.get('BOT_TOKEN' if PROD_MODE else 'TEST_BOT_TOKEN')
 SILENT_BOT_TOKEN = environ.get('SILENT_BOT_TOKEN' if PROD_MODE else 'TEST_SILENT_BOT_TOKEN')
+
+if not CONFIG.getboolean('Bot', 'cloud'):  # use CLI to fetch URL
+    result = subprocess.run(
+        ['heroku', 'config:get', 'DATABASE_URL', '-a', CONFIG.get('Heroku', 'app name')],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if result.returncode == 0: DATABASE_URL = result.stdout.strip()
+    else: raise ValueError(f'Error fetching `DATABASE_URL` via CLI: {result.stderr.strip()}')
+
+else:  # otherwise Heroku will add it to environment variables
+    DATABASE_URL = environ.get('DATABASE_URL')
+
+DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql+asyncpg://', 1)  # ensure compatibility with asynchronous paradigm
 
 USER_ID = int(environ.get('USER_ID'))
 
