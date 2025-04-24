@@ -6,23 +6,24 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from telegram.ext import ApplicationHandlerStop, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, TypeHandler, filters
 
 from src.core.bot import Bot, UserID
-from src.support.threshold_multiplier import ThresholdMultiplier
+from src.support.threshold_multiplier import ThresholdMultiplier as ThresholdMultiplierValue
 
 
 COMMANDS = [('start', 'Start the bot and get menu')]
 
 START_TEXT = 'Menu has been pinned to your input area'
 
-THRESHOLD_MULTIPLIER_NAME = 'Threshold multiplier'
-THRESHOLD_MULTIPLIER_TEXT = 'Adjust the threshold multiplier using buttons below:'
-THRESHOLD_MULTIPLIER_STEP = 0.05
+class ThresholdMultiplier:
+    NAME = 'Threshold multiplier'
+    TEXT = 'Adjust the threshold multiplier using buttons below:'
+    STEP = 0.05
 
 
 logger = logging.getLogger(__name__)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    markup = ReplyKeyboardMarkup([[InlineKeyboardButton(THRESHOLD_MULTIPLIER_NAME)]], resize_keyboard=True)
+    markup = ReplyKeyboardMarkup([[InlineKeyboardButton(ThresholdMultiplier.NAME)]], resize_keyboard=True)
     await update.message.reply_text(text=START_TEXT, reply_markup=markup)
 
 
@@ -37,23 +38,23 @@ class ThresholdMultiplierButton(str, Enum):
 def create_threshold_multiplier_markup():
     return InlineKeyboardMarkup([[
         InlineKeyboardButton('➖', callback_data=ThresholdMultiplierButton.DECREASE),
-        InlineKeyboardButton(f'{ThresholdMultiplier.get():.0%}', callback_data=ThresholdMultiplierButton.VALUE),
+        InlineKeyboardButton(f'{ThresholdMultiplierValue.get():.0%}', callback_data=ThresholdMultiplierButton.VALUE),
         InlineKeyboardButton('➕', callback_data=ThresholdMultiplierButton.INCREASE)
     ]])
 
 async def send_threshold_multiplier(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(text=THRESHOLD_MULTIPLIER_TEXT, reply_markup=create_threshold_multiplier_markup())
+    await update.message.reply_text(text=ThresholdMultiplier.TEXT, reply_markup=create_threshold_multiplier_markup())
 
 async def adjust_threshold_multiplier(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
     match query.data:
-        case ThresholdMultiplierButton.DECREASE: await ThresholdMultiplier.set(ThresholdMultiplier.get() - THRESHOLD_MULTIPLIER_STEP)
-        case ThresholdMultiplierButton.INCREASE: await ThresholdMultiplier.set(ThresholdMultiplier.get() + THRESHOLD_MULTIPLIER_STEP)
+        case ThresholdMultiplierButton.DECREASE: await ThresholdMultiplierValue.set(ThresholdMultiplierValue.get() - ThresholdMultiplier.STEP)
+        case ThresholdMultiplierButton.INCREASE: await ThresholdMultiplierValue.set(ThresholdMultiplierValue.get() + ThresholdMultiplier.STEP)
 
     try:
-        await query.edit_message_text(text=THRESHOLD_MULTIPLIER_TEXT, reply_markup=create_threshold_multiplier_markup())
+        await query.edit_message_text(text=ThresholdMultiplier.TEXT, reply_markup=create_threshold_multiplier_markup())
     except error.BadRequest as e:  # ignore exception about same content after editing
         if 'specified new message content and reply markup are exactly the same' not in str(e): raise
 
@@ -71,7 +72,7 @@ class CustomBot(Bot):
         )
         self.add_handlers(
             CommandHandler('start', start),
-            MessageHandler(filters.Regex(f'^{THRESHOLD_MULTIPLIER_NAME}$'), send_threshold_multiplier),
+            MessageHandler(filters.Regex(f'^{ThresholdMultiplier.NAME}$'), send_threshold_multiplier),
             CallbackQueryHandler(adjust_threshold_multiplier, pattern='|'.join(ThresholdMultiplierButton)),
             group=1,
         )
