@@ -4,7 +4,7 @@ from enum import Enum, auto
 from typing import Callable, Optional
 
 from src.pairs.pair import Pair, Turnover
-from src.support.threshold_multiplier import ThresholdMultiplier
+from src.support.upspike_threshold import UpspikeThreshold
 from src.support.time_series import Index
 from src.utils.time import Cooldowns
 
@@ -60,7 +60,7 @@ class SpikeDetector:
                 changes = [max(x, 0) if self.catch is Catch.UPSPIKES_ONLY else min(x, 0) for x in changes]
 
             thresholds = [  # align ordinal with minute duration that function accepts by adding 1
-                self.threshold_function(1 + i) * self.turnover_multiplier(pair.turnover) * ThresholdMultiplier.get()
+                self.threshold_function(1 + i) * self.turnover_multiplier(pair.turnover) * UpspikeThreshold.get()
                 for i in range(len(changes))
             ]
 

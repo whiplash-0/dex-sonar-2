@@ -6,16 +6,16 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMa
 from telegram.ext import ApplicationHandlerStop, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, TypeHandler, filters
 
 from src.core.bot import Bot, UserID
-from src.support.threshold_multiplier import ThresholdMultiplier as ThresholdMultiplierValue
+from src.support.upspike_threshold import UpspikeThreshold as UpspikeThresholdValue
 
 
 COMMANDS = [('start', 'Start the bot and get menu')]
 
 START_TEXT = 'Menu has been pinned to your input area'
 
-class ThresholdMultiplier:
-    NAME = 'Threshold multiplier'
-    TEXT = 'Adjust the threshold multiplier using buttons below:'
+class UpspikeThreshold:
+    NAME = 'Upspike threshold'
+    TEXT = 'Adjust the upspike threshold using buttons below:'
     STEP = 0.05
     MIN = 0.5
     MAX = 3
@@ -26,48 +26,48 @@ logger = logging.getLogger(__name__)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    markup = ReplyKeyboardMarkup([[InlineKeyboardButton(ThresholdMultiplier.NAME)]], resize_keyboard=True)
+    markup = ReplyKeyboardMarkup([[InlineKeyboardButton(UpspikeThreshold.NAME)]], resize_keyboard=True)
     await update.message.reply_text(text=START_TEXT, reply_markup=markup)
 
 
 
-class ThresholdMultiplierButton(str, Enum):
+class UpspikeThresholdButton(str, Enum):
     def _generate_next_value_(name, start, count, last_values):
-        return f'threshold_multiplier_{count}'
+        return f'upspike_threshold_{count}'
 
     DECREASE = auto()
     VALUE = auto()
     INCREASE = auto()
 
 
-def create_threshold_multiplier_markup():
+def create_upspike_threshold_markup():
     return InlineKeyboardMarkup([[
-        InlineKeyboardButton('➖', callback_data=ThresholdMultiplierButton.DECREASE),
-        InlineKeyboardButton(f'{ThresholdMultiplierValue.get():.0%}', callback_data=ThresholdMultiplierButton.VALUE),
-        InlineKeyboardButton('➕', callback_data=ThresholdMultiplierButton.INCREASE)
+        InlineKeyboardButton('➖', callback_data=UpspikeThresholdButton.DECREASE),
+        InlineKeyboardButton(f'{UpspikeThresholdValue.get():.0%}', callback_data=UpspikeThresholdButton.VALUE),
+        InlineKeyboardButton('➕', callback_data=UpspikeThresholdButton.INCREASE)
     ]])
 
 
-async def send_threshold_multiplier(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(text=ThresholdMultiplier.TEXT, reply_markup=create_threshold_multiplier_markup())
+async def send_upspike_threshold_adjusting(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(text=UpspikeThreshold.TEXT, reply_markup=create_upspike_threshold_markup())
 
 
-async def adjust_threshold_multiplier(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def adjust_upspike_threshold(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
     match query.data:
 
-        case ThresholdMultiplierButton.DECREASE:
-            if (value := ThresholdMultiplierValue.get() - ThresholdMultiplier.STEP) >= ThresholdMultiplier.MIN:
-                await ThresholdMultiplierValue.set(value)
+        case UpspikeThresholdButton.DECREASE:
+            if (value := UpspikeThresholdValue.get() - UpspikeThreshold.STEP) >= UpspikeThreshold.MIN:
+                await UpspikeThresholdValue.set(value)
 
-        case ThresholdMultiplierButton.INCREASE:
-            if (value := ThresholdMultiplierValue.get() + ThresholdMultiplier.STEP) <= ThresholdMultiplier.MAX:
-                await ThresholdMultiplierValue.set(value)
+        case UpspikeThresholdButton.INCREASE:
+            if (value := UpspikeThresholdValue.get() + UpspikeThreshold.STEP) <= UpspikeThreshold.MAX:
+                await UpspikeThresholdValue.set(value)
 
     try:
-        await query.edit_message_text(text=ThresholdMultiplier.TEXT, reply_markup=create_threshold_multiplier_markup())
+        await query.edit_message_text(text=UpspikeThreshold.TEXT, reply_markup=create_upspike_threshold_markup())
     except error.BadRequest as e:  # ignore exception about same content after editing
         if 'specified new message content and reply markup are exactly the same' not in str(e): raise
 
@@ -86,8 +86,8 @@ class CustomBot(Bot):
         )
         self.add_handlers(
             CommandHandler('start', start),
-            MessageHandler(filters.Regex(f'^{ThresholdMultiplier.NAME}$'), send_threshold_multiplier),
-            CallbackQueryHandler(adjust_threshold_multiplier, pattern='|'.join(ThresholdMultiplierButton)),
+            MessageHandler(filters.Regex(f'^{UpspikeThreshold.NAME}$'), send_upspike_threshold_adjusting),
+            CallbackQueryHandler(adjust_upspike_threshold, pattern='|'.join(UpspikeThresholdButton)),
             group=1,
         )
 

@@ -25,12 +25,12 @@ session = async_sessionmaker(
 
 Base = declarative_base()
 
-class ThresholdMultiplierTable(Base):
-    __tablename__ = 'threshold_multiplier'
+class UpspikeThresholdTable(Base):
+    __tablename__ = 'upspike_threshold'
     value = Column(Float, default=DEFAULT_VALUE, primary_key=True)
 
 
-class ThresholdMultiplier:
+class UpspikeThreshold:
     value = None
     lock = asyncio.Lock()
 
@@ -40,10 +40,10 @@ class ThresholdMultiplier:
             await c.run_sync(Base.metadata.create_all)
 
         async with session() as s:
-            row = (await s.execute(select(ThresholdMultiplierTable))).scalars().first()
+            row = (await s.execute(select(UpspikeThresholdTable))).scalars().first()
 
             if not row:
-                row = ThresholdMultiplierTable()
+                row = UpspikeThresholdTable()
                 s.add(row); await s.commit()
 
             cls.value = cls._truncate_rounding_error(row.value)
@@ -57,7 +57,7 @@ class ThresholdMultiplier:
         async with cls.lock:
             cls.value = cls._truncate_rounding_error(value)
             async with session() as s:
-                await s.execute(update(ThresholdMultiplierTable).values(value=cls.value)); await s.commit()
+                await s.execute(update(UpspikeThresholdTable).values(value=cls.value)); await s.commit()
 
     @staticmethod
     def _truncate_rounding_error(value):

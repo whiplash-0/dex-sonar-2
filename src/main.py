@@ -13,7 +13,7 @@ from src.pairs import live_pairs
 from src.pairs.live_pairs import LivePairs
 from src.pairs.pair import Pair
 from src.support import logs
-from src.support.threshold_multiplier import ThresholdMultiplier
+from src.support.upspike_threshold import UpspikeThreshold
 from src.utils import time
 from src.utils.utils import format_large_number
 
@@ -69,7 +69,7 @@ class Application:
     async def init(self):
         await self.bot.init()
         await self.pairs.init()
-        await ThresholdMultiplier.init()
+        await UpspikeThreshold.init()
         logger.info(f'Pairs ({len(self.pairs)}, turnover > ${format_large_number(self.pairs.get_sorted_by_turnover()[-1].turnover)}): ' + ', '.join([x.base_symbol for x in self.pairs]))
 
     async def task_update_pairs(self):
