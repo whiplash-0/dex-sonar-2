@@ -16,7 +16,7 @@ START_TEXT = 'Menu has been pinned to your input area'
 class UpspikeThreshold:
     NAME = 'Upspike threshold'
     TEXT = 'Adjust the upspike threshold using buttons below:'
-    STEP = 0.05
+    STEP = 0.1
     MIN = 0.5
     MAX = 3
 
