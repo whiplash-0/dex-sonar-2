@@ -1,4 +1,5 @@
 import asyncio
+import re
 
 from sqlalchemy import Column, Float, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -25,8 +26,19 @@ session = async_sessionmaker(
 
 Base = declarative_base()
 
-class UpspikeThresholdTable(Base):
-    __tablename__ = 'upspike_threshold'
+
+class AutoTablenameMixin:
+    """
+    Automatically defines necessary cls.__tablename__.
+    Assumes 'Table' word at the end of a name
+    """
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls.__tablename__ = re.sub(r'([a-z])([A-Z])', r'\1_\2', cls.__name__[:-5]).lower()
+
+
+class UpspikeThresholdTable(AutoTablenameMixin, Base):
     value = Column(Float, default=DEFAULT_VALUE, primary_key=True)
 
 
