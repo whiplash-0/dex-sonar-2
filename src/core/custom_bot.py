@@ -17,7 +17,7 @@ class UpspikeThreshold:
     NAME = UpspikeThresholdValue.get_name(title_case=True)
     TEXT = f'Adjust the {UpspikeThresholdValue.get_name()} using buttons below:'
     STEP = 0.1
-    MIN = 0.5
+    MIN = 0.1
     MAX = 3
 
 
