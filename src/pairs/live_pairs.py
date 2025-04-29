@@ -179,12 +179,16 @@ class LivePairs(Pairs):
                     limit=1000,
                 )
                 break
-            except requests_exceptions.ConnectionError as e:
+
+            except (requests_exceptions.ReadTimeout, requests_exceptions.ConnectionError) as e:
                 logger.warning(
                     f'{inspect.currentframe().f_code.co_name}(): Got {e}' +
                     (f'. Retrying in {error_cooldown.total_seconds()}s' if i < trials_on_error else '')
                 )
-                if i == trials_on_error: raise
+
+                if i == trials_on_error:
+                    raise
+
                 await asyncio.sleep(error_cooldown.total_seconds())
 
         return {x.symbol: x for x in Convert.get_instruments_info(instruments_info)}
