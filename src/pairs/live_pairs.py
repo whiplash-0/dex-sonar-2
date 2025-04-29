@@ -9,7 +9,7 @@ from pybit import unified_trading
 from src.core.async_tasks import AsyncConcurrentPollingTasks
 from src.pairs.pair import Pair, Symbol, TimeSeries
 from src.pairs.pairs import Pairs
-from src.pairs.pybit_converters import Convert, InstrumentInfo, Response
+from src.pairs.pybit_converters import Contract, Convert, InstrumentInfo, Response, Status
 from src.utils import time
 from src.utils.time import Cooldowns
 

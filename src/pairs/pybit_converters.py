@@ -12,6 +12,7 @@ Response = dict
 Symbol = str
 
 
+
 class PrelistingPhase(str, Enum):
     """
     Refer to: https://bybit-exchange.github.io/docs/v5/enum#curauctionphase
@@ -57,6 +58,7 @@ class StreamTicker(Ticker):
     timestamp: datetime = Field(..., alias='ts')
 
 
+
 class Kline(BaseModel):
     starts: list[datetime] = Field(...)
     opens: list[float] = Field(...)
@@ -80,19 +82,56 @@ class StreamKline(BaseModel):
     confirm: bool = Field(..., alias='confirm')
 
 
+
+class Contract(str, Enum):
+    """
+    Refer to: https://bybit-exchange.github.io/docs/v5/enum#status
+    """
+    def _generate_next_value_(name, start, count, last_values):
+        return ''.join([word.title() for word in name.split('_')])
+
+    LINEAR_PERPETUAL = auto()
+    LINEAR_FUTURES = auto()
+
+
+class Status(str, Enum):
+    """
+    Refer to: https://bybit-exchange.github.io/docs/v5/enum#status
+    """
+    def _generate_next_value_(name, start, count, last_values):
+        return ''.join([word.title() for word in name.split('_')])
+
+    PRE_LAUNCH = auto()
+    TRADING = auto()
+    CLOSED = auto()
+
+
 class InstrumentInfo(BaseModel):
+    """
+    :param funding_interval: In hours
+    """
     symbol: Symbol = Field(...)
-    funding_interval: int = Field(..., alias='fundingInterval')  # in hours
+
+    base_coin: str = Field(..., alias='baseCoin')
+    quote_coin: str = Field(..., alias='quoteCoin')
+
+    contract: Contract = Field(..., alias='contractType')
+    status: Status = Field(..., alias='status')
+    launch_time: datetime = Field(..., alias='launchTime')
     delisting_time: Optional[datetime] = Field(..., alias='deliveryTime')
 
-    @field_validator('funding_interval', mode='before')
-    def _normalize_funding_interval(cls, v: int) -> int:
-        if v % HOUR_IN_MINUTES != 0: raise ValueError('`funding_interval` must be divisible by 60 (minutes)')
-        return int(v / HOUR_IN_MINUTES)
+    funding_interval: int = Field(..., alias='fundingInterval')
 
     @field_validator('delisting_time', mode='before')
-    def _discard_zero(cls, v: str) -> Optional[str]:
+    def _replace_zero_with_none(cls, v: str) -> Optional[str]:
         return None if v == '0' else v
+
+    @field_validator('funding_interval', mode='before')
+    def _convert_to_hours(cls, v: int) -> int:
+        quotient, remainder = divmod(v, HOUR_IN_MINUTES)
+        if remainder != 0: raise ValueError('`funding_interval` must be divisible by 60 (minutes)')
+        return quotient
+
 
 
 class Convert:
