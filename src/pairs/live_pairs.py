@@ -188,7 +188,7 @@ class LivePairs(Pairs):
             except (requests_exceptions.ReadTimeout, requests_exceptions.ConnectionError) as e:
                 logger.warning(
                     f'{inspect.currentframe().f_code.co_name}(): Got {e}' +
-                    (f'. Retrying in {error_cooldown.total_seconds()}s' if i < trials_on_error else '')
+                    (f'. Retrying in {error_cooldown.total_seconds():.1f}s' if i < trials_on_error else '')
                 )
 
                 if i == trials_on_error:
