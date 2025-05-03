@@ -113,7 +113,7 @@ psycopg2==2.9.9
 psycopg2-binary==2.9.9
 ptyprocess==0.7.0
 pure-eval==0.2.2
-pybit==5.8.0
+pybit==5.10.1
 pycparser==2.22
 pycryptodome==3.21.0
 pydantic==2.7.3
