@@ -7,7 +7,7 @@ from typing import Callable, Iterable
 from src.core.async_tasks import AsyncConcurrentPollingTasks
 from src.pairs.pair import Pair, Symbol, TimeSeries
 from src.pairs.pairs import Pairs
-from src.pairs.pybit_wrapper import PybitWrapper, Response
+from src.pairs.pybit_wrapper import CONFIRM, DATA, PybitWrapper, Response, SYMBOL
 from src.utils import time
 from src.utils.time import Cooldowns
 
@@ -120,7 +120,7 @@ class LivePairs(Pairs):
             if not self._are_pybit_callbacks_enabled():
                 return
 
-            symbol = response['data']['symbol']
+            symbol = response[DATA][SYMBOL]
 
             if not self.ticker_updates_cooldowns.is_in_cooldown(symbol):
                 self.ticker_updates_cooldowns.set_for(symbol)
@@ -150,7 +150,7 @@ class LivePairs(Pairs):
             if not self._are_pybit_callbacks_enabled():
                 return
 
-            if response['data'][0]['confirm']:  # if candlestick is final
+            if response[DATA][0][CONFIRM]:  # if candlestick is final
                 kline = self.pybit.parse_stream_kline(response)
                 pair = self[kline.symbol]
 

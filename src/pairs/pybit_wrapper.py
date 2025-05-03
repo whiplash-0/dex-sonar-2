@@ -10,6 +10,19 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from requests import exceptions as requests_exceptions
 
 
+# pybit keywords
+# response
+RESULT = 'result'
+LIST = 'list'
+DATA = 'data'
+
+# parameters
+NEXT_PAGE_CURSOR = 'nextPageCursor'
+TOPIC = 'topic'
+SYMBOL = 'symbol'
+CONFIRM = 'confirm'
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -143,15 +156,6 @@ QUOTE_COIN = 'USDT'
 # arguments
 LIMIT = 1000
 KLINE_INTERVAL = '1'
-
-# response
-RESULT = 'result'
-LIST = 'list'
-DATA = 'data'
-
-# parameters
-NEXT_PAGE_CURSOR = 'nextPageCursor'
-TOPIC = 'topic'
 
 
 class PybitWrapper:
