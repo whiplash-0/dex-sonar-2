@@ -1,11 +1,16 @@
-from datetime import datetime
+import asyncio
+import inspect
+import logging
+from datetime import datetime, timedelta
 from enum import Enum, auto
-from typing import Optional
+from typing import Callable, Iterable, Optional
 
+from pybit import unified_trading
 from pydantic import BaseModel, Field, field_validator, model_validator
+from requests import exceptions as requests_exceptions
 
 
-HOUR_IN_MINUTES = 60
+logger = logging.getLogger(__name__)
 
 
 Response = dict
@@ -101,6 +106,8 @@ class Status(str, Enum):
     CLOSED = auto()
 
 
+HOUR_IN_MINUTES = 60
+
 class InstrumentInfo(BaseModel):
     """
     :param funding_interval: In hours
@@ -129,19 +136,101 @@ class InstrumentInfo(BaseModel):
 
 
 
-class Convert:
-    @staticmethod
-    def get_tickers(response: Response) -> list[Ticker]:
-        return [Ticker(**x) for x in response['result']['list']]
+# contracts
+CATEGORY = 'linear'
+QUOTE_COIN = 'USDT'
 
-    @staticmethod
-    def stream_ticker(response: Response) -> StreamTicker:
-        return StreamTicker(**response, **response['data'])
+# arguments
+LIMIT = 1000
+KLINE_INTERVAL = '1'
 
-    @staticmethod
-    def get_kline(response: Response, from_past_to_present: bool = False) -> Kline:
-        data = response['result']['list']
-        kline = list(zip(*(data if not from_past_to_present else reversed(data))))
+# response
+RESULT = 'result'
+LIST = 'list'
+DATA = 'data'
+
+# parameters
+NEXT_PAGE_CURSOR = 'nextPageCursor'
+
+
+class PybitWrapper:
+    def __init__(self):
+        self.http = unified_trading.HTTP(testnet=False)
+        self.websocket = unified_trading.WebSocket(testnet=False, channel_type=CATEGORY)
+
+    def is_connection_alive(self):
+        return self.websocket.is_connected()
+
+    def subscribe_to_ticker_updates(self, symbols: Iterable[Symbol], callback: Callable[[Response], None]):
+        self.websocket.ticker_stream(symbols, callback)
+
+    def subscribe_to_kline_updates(self, symbols: Iterable[Symbol], callback: Callable[[Response], None]):
+        self.websocket.kline_stream(KLINE_INTERVAL, symbols, callback)
+
+    async def get_instruments_info(self, retries_on_error: int = 0, retry_cooldown: timedelta = timedelta()) -> dict[Symbol, InstrumentInfo]:
+        response_list = []
+        response = None
+
+        while response is None or response[NEXT_PAGE_CURSOR] != '':  # ensure there are no more pages
+
+            for i in range(1 + retries_on_error):
+                try:
+                    response = self.http.get_instruments_info(
+                        category=CATEGORY,
+                        limit=LIMIT,
+                    )[RESULT]
+                    response_list.extend(response[LIST])
+                    break
+
+                except (
+                        requests_exceptions.ReadTimeout,
+                        requests_exceptions.ConnectionError
+                ) as e:
+                    logger.warning(
+                        f'{inspect.currentframe().f_code.co_name}(): Got {e}' +
+                        (f'. Retrying in {retry_cooldown.total_seconds():.1f}s' if i < retries_on_error else '')
+                    )
+
+                    if i == retries_on_error:
+                        raise
+
+                    await asyncio.sleep(retry_cooldown.total_seconds())
+
+        instruments_info = [
+            InstrumentInfo(**x) for x in response_list
+        ]
+
+        return {
+            x.symbol: x for x in instruments_info
+            if (
+                    x.contract is Contract.LINEAR_PERPETUAL and
+                    x.quote_coin == QUOTE_COIN
+            )
+        }
+
+    def get_tickers(self) -> dict[Symbol, Ticker]:
+        tickers = [
+            Ticker(**x)
+            for x in self.http.get_tickers(category=CATEGORY)[RESULT][LIST]
+        ]
+        return {x.symbol: x for x in tickers}
+
+    def get_kline(self, symbol: Symbol, from_past_to_present: bool = False) -> Kline:
+        response_list = self.http.get_kline(
+            category=CATEGORY,
+            symbol=symbol,
+            intervalTime=KLINE_INTERVAL,
+            limit=LIMIT,
+        )[RESULT][LIST]
+
+        kline = list(
+            zip(*(
+                response_list
+                if not from_past_to_present else
+                reversed(response_list)
+            ))
+        )
+
         return Kline(
             starts=kline[0],
             opens=kline[1],
@@ -153,9 +242,9 @@ class Convert:
         )
 
     @staticmethod
-    def stream_kline(response: Response) -> StreamKline:
-        return StreamKline(symbol=response['topic'].rsplit('.', 1)[-1], **response['data'][0])
+    def parse_stream_ticker(response: Response) -> StreamTicker:
+        return StreamTicker(**response, **response[DATA])
 
     @staticmethod
-    def get_instruments_info(response: Response) -> list[InstrumentInfo]:
-        return [InstrumentInfo(**x) for x in response['result']['list']]
+    def parse_stream_kline(response: Response) -> StreamKline:
+        return StreamKline(symbol=response['topic'].rsplit('.', 1)[-1], **response[DATA][0])

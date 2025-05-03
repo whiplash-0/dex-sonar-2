@@ -10,7 +10,7 @@ from src.core.custom_bot import CustomBot
 from src.core.message import SpikeMessage
 from src.core.spike_detector import Catch, Prefer, Spike, SpikeDetector
 from src.pairs import live_pairs
-from src.pairs.live_pairs import LivePairs
+from src.pairs.live_pairs import Intervals, LivePairs
 from src.pairs.pair import Pair
 from src.support import logs
 from src.support.upspike_threshold import UpspikeThreshold
@@ -35,8 +35,10 @@ class Application:
             whitelist=[parameters.USER_ID],
         )
         self.pairs = LivePairs(
-            update_frequency_price=CONFIG.get_timedelta_from_seconds('Pairs', 'update frequency price'),
-            polling_interval_update_instruments_info=CONFIG.get_timedelta_from_seconds('Pairs', 'update frequency instruments info'),
+            intervals=Intervals(
+                price_update=CONFIG.get_timedelta_from_seconds('Pairs', 'update frequency price'),
+                instruments_info_update=CONFIG.get_timedelta_from_seconds('Pairs', 'update frequency instruments info'),
+            ),
             callback_on_price_update=self._callback_on_price_update,
             pairs_filter=parameters.PAIRS_FILTER,
         )
@@ -76,7 +78,7 @@ class Application:
         try:
             await self.pairs.start_live_updates()
 
-        except live_pairs.WebsocketConnectionLostError:
+        except live_pairs.ConnectionLostError:
             logger.error('Websocket connection lost. Stopping bot')
             raise asyncio.CancelledError()
 

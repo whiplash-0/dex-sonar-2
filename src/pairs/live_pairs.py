@@ -1,86 +1,91 @@
-import asyncio
 import inspect
 import logging
+from dataclasses import dataclass
 from datetime import timedelta
 from typing import Callable, Iterable
-
-from pybit import unified_trading
-from requests import exceptions as requests_exceptions
 
 from src.core.async_tasks import AsyncConcurrentPollingTasks
 from src.pairs.pair import Pair, Symbol, TimeSeries
 from src.pairs.pairs import Pairs
-from src.pairs.pybit_converters import Contract, Convert, InstrumentInfo, Response, Status
+from src.pairs.pybit_wrapper import PybitWrapper, Response
 from src.utils import time
 from src.utils.time import Cooldowns
 
 
-CATEGORY = 'linear'
+INSTRUMENTS_INFO_RETRIES_ON_ERROR = 3
+INSTRUMENTS_INFO_ERROR_COOLDOWN = timedelta(seconds=1)
 
 
 logger = logging.getLogger(__name__)
 
 
-class WebsocketConnectionLostError(ConnectionError):
+class ConnectionLostError(ConnectionError):
     ...
+
+
+@dataclass
+class Intervals:
+    price_update:                     timedelta = timedelta(seconds=5)
+    instruments_info_update:          timedelta = timedelta(seconds=60)
+    connection_check:                 timedelta = timedelta(seconds=1)
+    uniformly_distributing_intervals: timedelta = timedelta(seconds=30)
 
 
 class LivePairs(Pairs):
     def __init__(
             self,
-            update_frequency_price: timedelta = timedelta(seconds=5),
-            polling_interval_update_instruments_info: timedelta = timedelta(seconds=60),
-            polling_interval_monitor_websocket_liveness: timedelta = timedelta(seconds=10),
-            polling_interval_distribute_update_cooldowns_uniformly: timedelta = timedelta(seconds=30),
+            intervals: Intervals,
             callback_on_price_update: Callable[[Pair], None] = lambda _: None,
-            pairs_filter: Callable[[list[Pair]], Iterable[Pair]] = lambda _: _,
+            pairs_filter: Callable[[Pairs], Iterable[Pair]] = lambda _: _,
     ):
         super().__init__()
-        self.update_frequency_price = update_frequency_price
+
+        self.ticker_update_interval = intervals.price_update
         self.callback_on_price_update = callback_on_price_update
         self.pairs_filter = pairs_filter
 
-        self.requests = unified_trading.HTTP(testnet=False)
-        self.websocket = unified_trading.WebSocket(testnet=False, channel_type=CATEGORY)
+        self.pybit = PybitWrapper()
         self.permanent_tasks = AsyncConcurrentPollingTasks(
-            (self._polling_task_monitor_websocket_liveness, polling_interval_monitor_websocket_liveness),
-            (self._polling_task_distribute_update_cooldowns_uniformly, polling_interval_distribute_update_cooldowns_uniformly),
-            (self._polling_task_update_instruments_info, polling_interval_update_instruments_info),
+            (self._polling_task_update_instruments_info, intervals.instruments_info_update),
+            (self._polling_task_check_connection, intervals.connection_check),
+            (self._polling_task_distribute_intervals_uniformly, intervals.uniformly_distributing_intervals),
         )
-        self.price_updates_cooldowns: Cooldowns[Symbol] = Cooldowns(cooldown=update_frequency_price)
-        self.are_websocket_callbacks_enabled = False
+        self.ticker_updates_cooldowns: Cooldowns[Symbol] = Cooldowns(cooldown=self.ticker_update_interval)
+        self.are_pybit_callbacks_enabled = False
 
     async def init(self):
         pairs = Pairs()
-        tickers = Convert.get_tickers(self.requests.get_tickers(category=CATEGORY))
-        instruments_info = await self._get_instruments_info()
 
-        for ticker in tickers:
-            ii = instruments_info[ticker.symbol]
-            if (
-                    ii.contract is Contract.LINEAR_PERPETUAL and
-                    ii.status is Status.TRADING and
-                    ii.quote_coin == 'USDT'
-            ):
-                pairs.update(Pair(
-                    symbol=ticker.symbol,
-                    prices=TimeSeries(step=timedelta(minutes=1)),
-                    turnovers=TimeSeries(step=timedelta(minutes=1)),
-                    turnover=ticker.turnover,
-                    open_interest=ticker.open_interest,
-                    funding_rate=ticker.funding_rate,
-                    funding_interval=ii.funding_interval,
-                    next_funding_time=ticker.next_funding_time,
-                    delisting_time=ii.delisting_time,
-                ))
+        instruments_info = await self.pybit.get_instruments_info(
+            retries_on_error=INSTRUMENTS_INFO_RETRIES_ON_ERROR,
+            retry_cooldown=INSTRUMENTS_INFO_ERROR_COOLDOWN,
+        )
+        tickers = self.pybit.get_tickers()
+
+        for symbol, ii in instruments_info.items():
+            t = tickers[symbol]
+
+            pairs.update(Pair(
+                symbol=t.symbol,
+
+                prices=TimeSeries(step=timedelta(minutes=1)),
+                turnovers=TimeSeries(step=timedelta(minutes=1)),
+
+                turnover=t.turnover,
+                open_interest=t.open_interest,
+                funding_rate=t.funding_rate,
+                funding_interval=ii.funding_interval,
+                next_funding_time=t.next_funding_time,
+                delisting_time=ii.delisting_time,
+            ))
 
         self.update(self.pairs_filter(pairs))
         self._update_candles()
 
     async def start_live_updates(self):
-        self.websocket.ticker_stream(self.get_symbols(), self._callback_on_ticker_update)
-        self.websocket.kline_stream(1, self.get_symbols(), self._callback_on_kline_update)
-        self._enable_websocket_callbacks()
+        self.pybit.subscribe_to_ticker_updates(self.get_symbols(), self._pybit_callback_on_ticker_update)
+        self.pybit.subscribe_to_kline_updates(self.get_symbols(), self._pybit_callback_on_kline_update)
+        self._enable_pybit_callbacks()
         await self.permanent_tasks.run(blocking=True)  # to be able to propagate exceptions
 
     async def stop_live_updates(self):
@@ -92,31 +97,33 @@ class LivePairs(Pairs):
         Currently, the only reliable way to fully stop the Pybit thread is to terminate the entire program.
         For an immediate exit with no delay or cleanup, use `os._exit(0)`.
         """
-        self._disable_websocket_callbacks()
+        self._disable_pybit_callbacks()
         await self.permanent_tasks.cancel_all()
 
     def are_live_updates_active(self):
-        return self.websocket.is_connected() and self._are_websocket_callbacks_enabled() and not self.permanent_tasks.are_cancelled()
+        return self.pybit.is_connection_alive() and self._are_pybit_callbacks_enabled() and not self.permanent_tasks.are_cancelled()
 
-    def _enable_websocket_callbacks(self):
-        self.are_websocket_callbacks_enabled = True
 
-    def _disable_websocket_callbacks(self):
-        self.are_websocket_callbacks_enabled = False
+    def _are_pybit_callbacks_enabled(self):
+        return self.are_pybit_callbacks_enabled
 
-    def _are_websocket_callbacks_enabled(self):
-        return self.are_websocket_callbacks_enabled
+    def _enable_pybit_callbacks(self):
+        self.are_pybit_callbacks_enabled = True
 
-    def _callback_on_ticker_update(self, response: Response):
+    def _disable_pybit_callbacks(self):
+        self.are_pybit_callbacks_enabled = False
+
+    def _pybit_callback_on_ticker_update(self, response: Response):
         try:
-            if not self._are_websocket_callbacks_enabled(): return
+            if not self._are_pybit_callbacks_enabled():
+                return
 
             symbol = response['data']['symbol']
 
-            if not self.price_updates_cooldowns.is_in_cooldown(symbol):
-                self.price_updates_cooldowns.set_for(symbol)
+            if not self.ticker_updates_cooldowns.is_in_cooldown(symbol):
+                self.ticker_updates_cooldowns.set_for(symbol)
 
-                ticker = Convert.stream_ticker(response)
+                ticker = self.pybit.parse_stream_ticker(response)
                 pair = self[symbol]
 
                 pair.prices.update(
@@ -133,15 +140,16 @@ class LivePairs(Pairs):
         except Exception:
             logger.exception(f'Callback `{inspect.currentframe().f_code.co_name}` caught exception'); raise
 
-    def _callback_on_kline_update(self, response: Response):
+    def _pybit_callback_on_kline_update(self, response: Response):
         """
         Updates pairs' prices and turnovers every minute when the current candlestick is closed
         """
         try:
-            if not self._are_websocket_callbacks_enabled(): return
+            if not self._are_pybit_callbacks_enabled():
+                return
 
             if response['data'][0]['confirm']:  # if candlestick is final
-                kline = Convert.stream_kline(response)
+                kline = self.pybit.parse_stream_kline(response)
                 pair = self[kline.symbol]
 
                 pair.prices.update(
@@ -158,60 +166,35 @@ class LivePairs(Pairs):
         except Exception:
             logger.exception(f'Callback `{inspect.currentframe().f_code.co_name}` caught exception'); raise
 
-    async def _polling_task_monitor_websocket_liveness(self):
-        if not self.websocket.is_connected(): raise WebsocketConnectionLostError()
 
-    async def _polling_task_distribute_update_cooldowns_uniformly(self):
-        self._disable_websocket_callbacks()
+    async def _polling_task_check_connection(self):
+        if not self.pybit.is_connection_alive(): raise ConnectionLostError()
+
+    async def _polling_task_distribute_intervals_uniformly(self):
+        self._disable_pybit_callbacks()
 
         timestamp = time.get_timestamp()
-        delta = self.update_frequency_price / (len(self) - 1) if len(self) > 1 else timedelta(0)
-        for i, x in enumerate(self.pairs): self.price_updates_cooldowns.set_start_for(x, timestamp + delta * i - self.price_updates_cooldowns.get_cooldown())
+        delta = self.ticker_update_interval / (len(self) - 1) if len(self) > 1 else timedelta(0)
+        for i, x in enumerate(self.pairs): self.ticker_updates_cooldowns.set_start_for(x, timestamp + delta * i - self.ticker_updates_cooldowns.get_cooldown())
 
-        self._enable_websocket_callbacks()
+        self._enable_pybit_callbacks()
 
     async def _polling_task_update_instruments_info(self):
-        instruments_info = await self._get_instruments_info()
-        for symbol, pair in self.pairs.items(): pair.funding_interval = instruments_info[symbol].funding_interval
+        instruments_info = await self.pybit.get_instruments_info(
+            retries_on_error=INSTRUMENTS_INFO_RETRIES_ON_ERROR,
+            retry_cooldown=INSTRUMENTS_INFO_ERROR_COOLDOWN,
+        )
+        for symbol, pair in self.pairs.items():
+            pair.funding_interval = instruments_info[symbol].funding_interval
 
-    async def _get_instruments_info(self, trials_on_error=3, error_cooldown=timedelta(seconds=1)) -> dict[Symbol, InstrumentInfo]:
-        instruments_info = None
-
-        for i in range(1 + trials_on_error):
-            try:
-                instruments_info = self.requests.get_instruments_info(
-                    category=CATEGORY,
-                    limit=1000,
-                )
-                break
-
-            except (requests_exceptions.ReadTimeout, requests_exceptions.ConnectionError) as e:
-                logger.warning(
-                    f'{inspect.currentframe().f_code.co_name}(): Got {e}' +
-                    (f'. Retrying in {error_cooldown.total_seconds():.1f}s' if i < trials_on_error else '')
-                )
-
-                if i == trials_on_error:
-                    raise
-
-                await asyncio.sleep(error_cooldown.total_seconds())
-
-        return {x.symbol: x for x in Convert.get_instruments_info(instruments_info)}
 
     def _update_candles(self):
-        for symbol in self.get_symbols(): self._update_candle(symbol)
+        for symbol in self.get_symbols():
+            self._update_pair_candles(symbol)
 
-    def _update_candle(self, symbol: Symbol):
+    def _update_pair_candles(self, symbol: Symbol):
         pair = self[symbol]
-        kline = Convert.get_kline(
-            self.requests.get_kline(
-                category=CATEGORY,
-                symbol=symbol,
-                intervalTime='1',
-                limit=1000,
-            ),
-            from_past_to_present=True,
-        )
+        kline = self.pybit.get_kline(symbol, from_past_to_present=True)
 
         # confirmed (closed) candles
         pair.prices.update(
