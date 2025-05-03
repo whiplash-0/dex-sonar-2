@@ -19,12 +19,12 @@ class Pairs:
     def __repr__(self):
         return f'{self.__class__.__name__}({", ".join([x.base_symbol for x in self])})'
 
-    def update(self, pairs: Pair | Iterable[Pair]):
-        if isinstance(pairs, Pair): pairs = [pairs]
-        self.pairs |= {x.symbol: x for x in pairs}
-
     def get_symbols(self) -> KeysView[Symbol]:
-        return list(self.pairs.keys())
+        return self.pairs.keys()
 
     def get_sorted_by_turnover(self, ascending=False) -> list[Pair]:
         return sorted(self.pairs.values(), key=lambda x: x.turnover, reverse=not ascending)
+
+    def update(self, pairs: Pair | Iterable[Pair]):
+        if isinstance(pairs, Pair): pairs = [pairs]
+        self.pairs |= {x.symbol: x for x in pairs}
