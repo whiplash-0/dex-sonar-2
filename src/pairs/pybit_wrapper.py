@@ -151,6 +151,7 @@ DATA = 'data'
 
 # parameters
 NEXT_PAGE_CURSOR = 'nextPageCursor'
+TOPIC = 'topic'
 
 
 class PybitWrapper:
@@ -247,4 +248,4 @@ class PybitWrapper:
 
     @staticmethod
     def parse_stream_kline(response: Response) -> StreamKline:
-        return StreamKline(symbol=response['topic'].rsplit('.', 1)[-1], **response[DATA][0])
+        return StreamKline(symbol=response[TOPIC].rsplit('.', 1)[-1], **response[DATA][0])
