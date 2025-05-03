@@ -82,6 +82,7 @@ class LivePairs(Pairs):
         self.update(self.pairs_filter(pairs))
         self._update_candles()
 
+
     async def start_live_updates(self):
         self.pybit.subscribe_to_ticker_updates(self.get_symbols(), self._pybit_callback_on_ticker_update)
         self.pybit.subscribe_to_kline_updates(self.get_symbols(), self._pybit_callback_on_kline_update)
@@ -112,6 +113,7 @@ class LivePairs(Pairs):
 
     def _disable_pybit_callbacks(self):
         self.are_pybit_callbacks_enabled = False
+
 
     def _pybit_callback_on_ticker_update(self, response: Response):
         try:
