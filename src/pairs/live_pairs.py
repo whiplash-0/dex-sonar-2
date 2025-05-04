@@ -60,6 +60,7 @@ class LivePairs(Pairs):
         self.callback_on_price_update = callback_on_price_update
         self.should_pair_be_included = should_pair_be_included
         self.are_pybit_callbacks_enabled = False
+        self.cached_instruments_info_symbols: set[Symbol] = set()
 
     async def init(self):
         await self._add_new_pairs_if_any()
@@ -143,15 +144,18 @@ class LivePairs(Pairs):
             pair.funding_interval = instruments_info[symbol].funding_interval
 
     async def _polling_task_synchronize_pairs_list(self):
-        instruments_info = await self.pybit.get_cached_instruments_info()  # to avoid waiting
+        instruments_info_symbols = (await self.pybit.get_cached_instruments_info()).keys()  # to avoid waiting
 
-        if pairs := await self._add_new_pairs_if_any():
-            self._subscribe_to_live_updates(pairs.get_symbols)
-            logger.info(f'Added new pairs: {", ".join([x.base_symbol for x in self if x.symbol in pairs.get_symbols])}')
+        if instruments_info_symbols != self.cached_instruments_info_symbols:  # to also avoid extra waiting
+            self.cached_instruments_info_symbols = set(instruments_info_symbols)
 
-        if removed_symbols := self.get_symbols() - instruments_info.keys():
-            logger.info(f'Removing pairs: {", ".join([x.base_symbol for x in self if x.symbol in removed_symbols])}')
-            self.remove(removed_symbols)
+            if pairs := await self._add_new_pairs_if_any():
+                self._subscribe_to_live_updates(pairs.get_symbols())
+                logger.info(f'Added new pairs: {", ".join([x.base_symbol for x in pairs])}')
+
+            if removed_symbols := self.get_symbols() - instruments_info_symbols:
+                logger.info(f'Removing pairs: {", ".join([x.base_symbol for x in self if x.symbol in removed_symbols])}')
+                self.remove(removed_symbols)
 
 
     def _are_pybit_callbacks_enabled(self):
