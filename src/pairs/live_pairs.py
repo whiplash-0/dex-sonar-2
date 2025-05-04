@@ -151,10 +151,10 @@ class LivePairs(Pairs):
 
             if pairs := await self._add_new_pairs_if_any():
                 self._subscribe_to_live_updates(pairs.get_symbols())
-                logger.info(f'Added new pairs: {", ".join([x.base_symbol for x in pairs])}')
+                logger.info(f'Added new pairs: {", ".join(pairs.get_base_symbols())}')
 
             if removed_symbols := self.get_symbols() - instruments_info_symbols:
-                logger.info(f'Removing pairs: {", ".join([x.base_symbol for x in self if x.symbol in removed_symbols])}')
+                logger.info(f'Removing pairs: {", ".join(self[removed_symbols].get_base_symbols())}')
                 self.remove(removed_symbols)
 
 
