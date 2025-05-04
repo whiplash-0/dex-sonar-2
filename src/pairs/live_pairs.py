@@ -27,10 +27,10 @@ class ConnectionLostError(ConnectionError):
 @dataclass
 class Intervals:
     price_update:                     timedelta = timedelta(seconds=5)
+    price_update_staggering:          timedelta = timedelta(seconds=30)
     instruments_info_update:          timedelta = timedelta(seconds=60)
+    pairs_list_synchronization:       timedelta = timedelta(seconds=60)
     connection_check:                 timedelta = timedelta(seconds=1)
-    uniformly_distributing_intervals: timedelta = timedelta(seconds=30)
-    synchronizing_pairs_list:         timedelta = timedelta(seconds=60)
 
 
 
@@ -49,9 +49,9 @@ class LivePairs(Pairs):
         )
         self.permanent_tasks = AsyncConcurrentPollingTasks(
             (self._polling_task_update_instruments_info, intervals.instruments_info_update),
-            (self._polling_task_check_connection, intervals.connection_check),
-            (self._polling_task_distribute_intervals_uniformly, intervals.uniformly_distributing_intervals),
-            (self._polling_task_sync_pairs_list, intervals.synchronizing_pairs_list),
+            (self._polling_task_check_connection,        intervals.connection_check),
+            (self._polling_task_stagger_price_updates,   intervals.price_update_staggering),
+            (self._polling_task_synchronize_pairs_list,  intervals.pairs_list_synchronization),
         )
         self.ticker_updates_cooldowns: Cooldowns[Symbol] = Cooldowns(
             cooldown=intervals.price_update,
@@ -124,7 +124,7 @@ class LivePairs(Pairs):
     async def _polling_task_check_connection(self):
         if not self.pybit.is_connection_alive(): raise ConnectionLostError()
 
-    async def _polling_task_distribute_intervals_uniformly(self):
+    async def _polling_task_stagger_price_updates(self):
         self._disable_pybit_callbacks()
 
         timestamp = time.get_timestamp()
@@ -138,7 +138,7 @@ class LivePairs(Pairs):
         for symbol, pair in self.pairs.items():
             pair.funding_interval = instruments_info[symbol].funding_interval
 
-    async def _polling_task_sync_pairs_list(self):
+    async def _polling_task_synchronize_pairs_list(self):
         instruments_info = await self.pybit.get_cached_instruments_info()  # to avoid waiting
 
         if new_symbols := instruments_info.keys() - self.get_symbols():
