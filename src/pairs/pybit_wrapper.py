@@ -149,9 +149,12 @@ KLINE_INTERVAL = '1'
 
 
 class PybitWrapper:
-    def __init__(self):
+    def __init__(self, retries_on_error: int = 0, retry_cooldown: timedelta = timedelta()):
         self.http = unified_trading.HTTP(testnet=False)
         self.websocket = unified_trading.WebSocket(testnet=False, channel_type=CATEGORY)
+        self.retries_on_error = retries_on_error
+        self.retry_cooldown = retry_cooldown
+        self.cached_instruments_info = None
 
     def is_connection_alive(self):
         return self.websocket.is_connected()
@@ -162,13 +165,13 @@ class PybitWrapper:
     def subscribe_to_kline_updates(self, symbols: Iterable[Symbol], callback: Callable[[Response], None]):
         self.websocket.kline_stream(KLINE_INTERVAL, symbols, callback)
 
-    async def get_instruments_info(self, retries_on_error: int = 0, retry_cooldown: timedelta = timedelta()) -> dict[Symbol, InstrumentInfo]:
+    async def get_instruments_info(self) -> dict[Symbol, InstrumentInfo]:
         response_list = []
         response = None
 
         while response is None or response[NEXT_PAGE_CURSOR] != '':  # ensure there are no more pages
 
-            for i in range(1 + retries_on_error):
+            for i in range(1 + self.retries_on_error):
                 try:
                     response = self.http.get_instruments_info(
                         category=CATEGORY,
@@ -186,25 +189,29 @@ class PybitWrapper:
                 ) as e:
                     logger.warning(
                         f'{inspect.currentframe().f_code.co_name}(): Got {e}' +
-                        (f'. Retrying in {retry_cooldown.total_seconds():.1f}s' if i < retries_on_error else '')
+                        (f'. Retrying in {self.retry_cooldown.total_seconds():.1f}s' if i < self.retries_on_error else '')
                     )
 
-                    if i == retries_on_error:
+                    if i == self.retries_on_error:
                         raise
 
-                    await asyncio.sleep(retry_cooldown.total_seconds())
+                    await asyncio.sleep(self.retry_cooldown.total_seconds())
 
         instruments_info = [
             InstrumentInfo(**x) for x in response_list
         ]
-
-        return {
+        self.cached_instruments_info = {
             x.symbol: x for x in instruments_info
             if (
                     x.contract is Contract.LINEAR_PERPETUAL and
                     x.quote_coin == QUOTE_COIN
             )
         }
+
+        return self.cached_instruments_info
+
+    async def get_cached_instruments_info(self) -> dict[Symbol, InstrumentInfo]:
+        return self.cached_instruments_info
 
     def get_tickers(self) -> dict[Symbol, Ticker]:
         tickers = [

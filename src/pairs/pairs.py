@@ -28,3 +28,7 @@ class Pairs:
     def update(self, pairs: Pair | Iterable[Pair]):
         if isinstance(pairs, Pair): pairs = [pairs]
         self.pairs |= {x.symbol: x for x in pairs}
+
+    def remove(self, symbols: Symbol | Iterable[Symbol]):
+        if isinstance(symbols, Pair): symbols = [symbols]
+        for x in symbols: self.pairs.pop(x)
