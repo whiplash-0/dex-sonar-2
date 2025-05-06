@@ -1,4 +1,4 @@
-from typing import Iterable, Iterator, KeysView, Optional, Self
+from typing import Iterable, Iterator, Optional, Self
 
 from src.pairs.pair import Pair, Symbol
 
@@ -23,8 +23,8 @@ class Pairs:
     def __repr__(self):
         return f'{self.__class__.__name__}({", ".join([x.base_symbol for x in self])})'
 
-    def get_symbols(self) -> KeysView[Symbol]:
-        return self.pairs.keys()
+    def get_symbols(self) -> list[Symbol]:
+        return list(self.pairs.keys())
 
     def get_base_symbols(self) -> list[Symbol]:
         return [x.base_symbol for x in self.pairs.values()]
