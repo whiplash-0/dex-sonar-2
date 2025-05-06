@@ -113,9 +113,9 @@ class LivePairs(Pairs):
                 )
 
                 if self.should_pair_be_included(pair):
-                    pairs.update(pair)
+                    pairs.extend(pair)
 
-            self.update(pairs)
+            self.extend(pairs)
             self._update_candles(pairs.get_symbols())
 
         return pairs

@@ -32,7 +32,7 @@ class Pairs:
     def get_sorted_by_turnover(self, ascending=False) -> list[Pair]:
         return sorted(self.pairs.values(), key=lambda x: x.turnover, reverse=not ascending)
 
-    def update(self, pairs: Pair | Iterable[Pair]):
+    def extend(self, pairs: Pair | Iterable[Pair]):
         if isinstance(pairs, Pair): pairs = [pairs]
         self.pairs |= {x.symbol: x for x in pairs}
 
