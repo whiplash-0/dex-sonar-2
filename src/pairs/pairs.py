@@ -1,11 +1,20 @@
-from typing import Iterable, Iterator, Optional, Self
+from typing import Callable, Iterable, Iterator, Optional, Self
 
 from src.pairs.pair import Pair, Symbol
 
 
+PairOrPairs = Pair | Iterable[Pair]
+
+
 class Pairs:
-    def __init__(self, pairs: Optional[Iterable[Pair]] = None):
-        self.pairs: dict[Symbol, Pair] = dict((p.symbol, p) for p in pairs) if pairs else {}
+    def __init__(
+            self,
+            pairs: Optional[PairOrPairs] = None,
+            should_pair_be_included: Callable[[Pair], bool] = lambda _: True,
+    ):
+        self.pairs: dict[Symbol, Pair] = {}
+        self.should_pair_be_included = should_pair_be_included
+        if pairs: self._extend(pairs)
 
     def __len__(self):
         return len(self.pairs)
@@ -32,10 +41,15 @@ class Pairs:
     def get_sorted_by_turnover(self, ascending=False) -> list[Pair]:
         return sorted(self.pairs.values(), key=lambda x: x.turnover, reverse=not ascending)
 
-    def extend(self, pairs: Pair | Iterable[Pair]):
-        if isinstance(pairs, Pair): pairs = [pairs]
-        self.pairs |= {x.symbol: x for x in pairs}
+    def extend(self, pairs: PairOrPairs) -> Self:
+        return Pairs(self._extend(pairs))
 
     def remove(self, symbols: Symbol | Iterable[Symbol]):
         if isinstance(symbols, Pair): symbols = [symbols]
         for x in symbols: self.pairs.pop(x)
+
+    def _extend(self, pairs: PairOrPairs) -> list[Pair]:
+        if isinstance(pairs, Pair): pairs = [pairs]
+        included_pairs = [x for x in pairs if self.should_pair_be_included(x)]
+        self.pairs |= {x.symbol: x for x in included_pairs}
+        return included_pairs

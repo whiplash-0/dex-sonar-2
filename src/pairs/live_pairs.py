@@ -39,9 +39,9 @@ class LivePairs(Pairs):
             self,
             intervals: Intervals,
             callback_on_price_update: Callable[[Pair], None] = lambda _: None,
-            should_pair_be_included: Callable[[Pair], bool] = lambda _: True,
+            **kwargs,
     ):
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.pybit = PybitWrapper(
             retries_on_error=RETRIES_ON_ERROR,
@@ -58,7 +58,6 @@ class LivePairs(Pairs):
         )
 
         self.callback_on_price_update = callback_on_price_update
-        self.should_pair_be_included = should_pair_be_included
         self.are_pybit_callbacks_enabled = False
         self.cached_instruments_info_symbols: set[Symbol] = set()
 
@@ -88,7 +87,7 @@ class LivePairs(Pairs):
 
 
     async def _add_new_pairs_if_any(self) -> Pairs:
-        pairs = Pairs()
+        pairs = []
         instruments_info = await self.pybit.get_instruments_info()
 
         if new_symbols := instruments_info.keys() - self.get_symbols():
@@ -97,8 +96,7 @@ class LivePairs(Pairs):
             for symbol in new_symbols:
                 ii = instruments_info[symbol]
                 t = tickers[symbol]
-
-                pair = Pair(
+                pairs.append(Pair(
                     symbol=t.symbol,
 
                     prices=TimeSeries(step=timedelta(minutes=1)),
@@ -110,13 +108,13 @@ class LivePairs(Pairs):
                     funding_interval=ii.funding_interval,
                     next_funding_time=t.next_funding_time,
                     delisting_time=ii.delisting_time,
-                )
+                ))
 
-                if self.should_pair_be_included(pair):
-                    pairs.extend(pair)
-
-            self.extend(pairs)
+            pairs = self.extend(pairs)
             self._update_candles(pairs.get_symbols())
+
+        else:
+            pairs = Pairs()
 
         return pairs
 
