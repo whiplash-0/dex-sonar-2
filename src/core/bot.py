@@ -1,3 +1,4 @@
+import logging
 from io import BytesIO
 from typing import Coroutine, Sequence
 
@@ -10,6 +11,9 @@ DEFAULTS = Defaults(
     parse_mode=ParseMode.MARKDOWN_V2,
     link_preview_options=LinkPreviewOptions(is_disabled=True),
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 Token = str
@@ -36,11 +40,11 @@ class Bot:
     async def run(self, coro: Coroutine):
         await self.application.initialize()
         await self.application.start()
-        await self.application.updater.start_polling()
+        await self.application.updater.start_polling(error_callback=self._handle_telegram_error)
 
         await self.application_silent.initialize()
         await self.application_silent.start()
-        await self.application_silent.updater.start_polling()
+        await self.application_silent.updater.start_polling(error_callback=self._handle_telegram_error)
 
         await coro
 
@@ -83,3 +87,10 @@ class Bot:
     async def remove_description(self):
         await self.bot.set_my_short_description(None)
         await self.bot_silent.set_my_short_description(None)
+
+    @staticmethod
+    def _handle_telegram_error(error):
+        """
+        Suppresses extra verbose output with traceback from telegram logger
+        """
+        ...
