@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime, tzinfo
-from enum import Enum, auto
 from typing import Iterable, Optional
 from zoneinfo import ZoneInfo
 
@@ -14,13 +13,6 @@ from src.support.time_series import Index, TimeSeries
 Symbol = str
 Price = float
 Turnover = float
-OpenInterest = float
-
-
-class Contract(Enum):
-    USDT = auto()
-    USDC = auto()
-    CLASSIC = auto()
 
 
 @dataclass
@@ -29,6 +21,9 @@ class Pair:
     :param funding_interval: In hours
     """
     symbol: Symbol
+
+    base_symbol: Symbol
+    quote_symbol: Symbol
 
     delisting_time: Optional[datetime]
 
@@ -49,16 +44,8 @@ class Pair:
         return hash(self.symbol)
 
     @property
-    def contract(self) -> Contract:
-        return (
-            Contract.USDT
-            if self.symbol.endswith('USDT') else
-            (Contract.USDC if self.symbol.endswith('PERP') else Contract.CLASSIC)
-        )
-
-    @property
-    def base_symbol(self):
-        return self.symbol[:-4] if self.contract is not Contract.CLASSIC else self.symbol.split('-', 1)[0]
+    def is_being_delisted(self):
+        return self.delisting_time is not None
 
     @property
     def price(self):
@@ -67,10 +54,6 @@ class Pair:
     @property
     def funding_rate_per_day(self):
         return self.funding_rate / self.funding_interval * 24
-
-    @property
-    def is_being_delisted(self):
-        return self.delisting_time is not None
 
     def create_chart(
             self,

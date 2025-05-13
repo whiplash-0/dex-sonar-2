@@ -116,6 +116,11 @@ class LivePairs(Pairs):
                 pairs.append(Pair(
                     symbol=t.symbol,
 
+                    base_symbol=ii.base_symbol,
+                    quote_symbol=ii.quote_symbol,
+
+                    delisting_time=ii.delisting_time,
+
                     prices=TimeSeries(step=timedelta(minutes=1)),
                     turnovers=TimeSeries(step=timedelta(minutes=1)),
 
@@ -123,7 +128,6 @@ class LivePairs(Pairs):
                     funding_rate=t.funding_rate,
                     funding_interval=ii.funding_interval,
                     next_funding_time=t.next_funding_time,
-                    delisting_time=ii.delisting_time,
                 ))
 
             pairs = self.extend(pairs)
