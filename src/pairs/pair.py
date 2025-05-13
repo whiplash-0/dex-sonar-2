@@ -25,15 +25,21 @@ class Contract(Enum):
 
 @dataclass
 class Pair:
+    """
+    :param funding_interval: In hours
+    """
     symbol: Symbol
+
+    delisting_time: Optional[datetime]
+
     prices: TimeSeries[Price]
     turnovers: TimeSeries[Turnover]
+
     turnover: Turnover
     open_interest: OpenInterest
     funding_rate: Optional[float]
-    funding_interval: int  # in hours
+    funding_interval: int
     next_funding_time: datetime
-    delisting_time: Optional[datetime]
 
     BASE_SYMBOL_MAX_LEN = 14
 
