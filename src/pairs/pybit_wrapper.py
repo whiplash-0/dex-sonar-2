@@ -182,6 +182,9 @@ class PybitWrapper:
         self.websocket.kline_stream(KLINE_INTERVAL, symbols, callback)
 
     async def get_instruments_info(self, cached=False) -> dict[Symbol, InstrumentInfo]:
+        """
+        Should be used as only source for instruments / contracts, not `get_tickers()`
+        """
         if cached and self.cached_instruments_info:
             return self.cached_instruments_info
 
