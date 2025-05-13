@@ -36,7 +36,6 @@ class Pair:
     turnovers: TimeSeries[Turnover]
 
     turnover: Turnover
-    open_interest: OpenInterest
     funding_rate: Optional[float]
     funding_interval: int
     next_funding_time: datetime

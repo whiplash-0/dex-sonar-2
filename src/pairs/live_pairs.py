@@ -120,7 +120,6 @@ class LivePairs(Pairs):
                     turnovers=TimeSeries(step=timedelta(minutes=1)),
 
                     turnover=t.turnover,
-                    open_interest=t.open_interest,
                     funding_rate=t.funding_rate,
                     funding_interval=ii.funding_interval,
                     next_funding_time=t.next_funding_time,
@@ -208,7 +207,6 @@ class LivePairs(Pairs):
                     time.ceil_timestamp_minute(ticker.timestamp),
                 )
                 pair.turnover = ticker.turnover
-                pair.open_interest = ticker.open_interest
                 pair.funding_rate = ticker.funding_rate
                 pair.next_funding_time = ticker.next_funding_time
 
