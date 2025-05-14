@@ -2,8 +2,9 @@ import asyncio
 import logging
 import time as pytime
 from abc import ABC, abstractmethod
-from datetime import timedelta
 from typing import Callable, Coroutine, Optional
+
+from src.utils.time import Timedelta
 
 
 logger = logging.getLogger(__name__)
@@ -72,7 +73,7 @@ class AsyncConcurrentTasks(AsyncTasksBase):
 
 
 class AsyncConcurrentPollingTasks(AsyncConcurrentTasks):
-    def __init__(self, *raw_coroutines_and_poll_intervals: tuple[RawCoroutine, timedelta]):
+    def __init__(self, *raw_coroutines_and_poll_intervals: tuple[RawCoroutine, Timedelta]):
         super().__init__(*[self._wrap_coroutine_with_polling(x, y) for x, y in raw_coroutines_and_poll_intervals])
 
     @staticmethod

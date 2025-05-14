@@ -1,12 +1,11 @@
 from dataclasses import dataclass
-from datetime import timedelta
 from enum import Enum, auto
 from typing import Callable, Optional
 
 from src.contracts.contract import Contract, Turnover
 from src.support.time_series import Index
 from src.support.upspike_threshold import UpspikeThreshold
-from src.utils.time import Cooldowns
+from src.utils.time import Cooldowns, Timedelta
 
 
 Change = float  # relative
@@ -39,7 +38,7 @@ class SpikeDetector:
             turnover_multiplier: Callable[[Turnover], float] = lambda _: 1,
             catch: Catch = Catch.ALL_SPIKES,
             prefer: Prefer = Prefer.MAX_CHANGE,
-            cooldown: timedelta = timedelta(),
+            cooldown: Timedelta = Timedelta(),
     ):
         self.max_range = max_range
         self.threshold_function = threshold_function

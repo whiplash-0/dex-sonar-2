@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-from datetime import datetime, timedelta
 
 from src.config import parameters
 from src.config.config import CONFIG
@@ -15,10 +14,11 @@ from src.core.spike_detector import Catch, Prefer, Spike, SpikeDetector
 from src.support import logs
 from src.support.upspike_threshold import UpspikeThreshold
 from src.utils import time
+from src.utils.time import Timedelta, Timestamp
 from src.utils.utils import format_large_number
 
 
-POLLING_INTERVAL_UPDATE_BOT_STATUS = timedelta(minutes=1)
+POLLING_INTERVAL_UPDATE_BOT_STATUS = Timedelta(minutes=1)
 
 
 logs.setup_logging(
@@ -89,12 +89,12 @@ class Application:
         finally:
             await self.contracts.stop_live_updates()
 
-    async def task_update_bot_status(self, polling_interval: timedelta):
+    async def task_update_bot_status(self, polling_interval: Timedelta):
         try:
             while True:
                 await self.bot.set_description(
                     f'Uptime: {time.format_timedelta(time.get_time_passed_since(self.start_time))} '
-                    f'({datetime.now(CONFIG.get_timezone("Logging", "timezone")).strftime("%H:%M %d-%m")})'
+                    f'({Timestamp.now(CONFIG.get_timezone("Logging", "timezone")).strftime("%H:%M %d-%m")})'
                 )
                 await asyncio.sleep(polling_interval.total_seconds())
 

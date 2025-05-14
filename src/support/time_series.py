@@ -1,10 +1,10 @@
-from datetime import datetime, timedelta
 from typing import Generic, Sequence, TypeVar
+
+from src.utils.time import Timedelta, Timestamp
 
 
 Value = TypeVar('Value')
-Timestamp = datetime
-Timestep = timedelta
+Timestep = Timedelta
 Index = int
 Values = list[Value]
 Timestamps = list[Timestamp]

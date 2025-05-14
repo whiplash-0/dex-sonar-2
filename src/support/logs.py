@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, tzinfo
+from datetime import tzinfo
 from logging import CRITICAL, DEBUG, Formatter, INFO, LogRecord, StreamHandler, WARNING, getLogger
 from math import floor
 from statistics import mean
@@ -7,6 +7,8 @@ from zoneinfo import ZoneInfo
 
 import colorama
 from colorama import Fore
+
+from src.utils.time import Timestamp
 
 
 VERBOSE = floor(mean([
@@ -38,7 +40,7 @@ def setup_logging(
         timestamp_format: str,
         timezone: tzinfo = ZoneInfo('UTC'),
 ):
-    logging.Formatter.converter = lambda *args: datetime.now(timezone).timetuple()
+    logging.Formatter.converter = lambda *args: Timestamp.now(timezone).timetuple()
 
     colorama.init(autoreset=True)
     logging.addLevelName(VERBOSE, 'VERBOSE')

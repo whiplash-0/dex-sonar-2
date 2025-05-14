@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, tzinfo
+from datetime import tzinfo
 from typing import Iterable, Optional
 from zoneinfo import ZoneInfo
 
@@ -8,9 +8,10 @@ from matplotlib.dates import DateFormatter
 from matplotlib.ticker import MaxNLocator, PercentFormatter
 
 from src.support.time_series import Index, TimeSeries
+from src.utils.time import Timedelta, Timestamp
 
 
-CANDLE_TIMEFRAME = timedelta(minutes=1)
+CANDLE_TIMEFRAME = Timedelta(minutes=1)
 
 
 Symbol = str
@@ -29,7 +30,7 @@ class Contract:
     base_symbol: Symbol
     quote_symbol: Symbol
 
-    delisting_time: Optional[datetime]
+    delisting_time: Optional[Timestamp]
 
     prices: TimeSeries[Price] = field(init=False)
     turnovers: TimeSeries[Turnover] = field(init=False)
@@ -37,7 +38,7 @@ class Contract:
     turnover: Turnover
     funding_rate: Optional[float]
     funding_interval: int
-    next_funding_time: datetime
+    next_funding_time: Timestamp
 
 
     BASE_SYMBOL_MAX_LEN = 14

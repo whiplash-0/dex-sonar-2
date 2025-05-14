@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta
 from unittest import TestCase, main
 
 from src.support.time_series import TimeSeries
+from src.utils.time import Timedelta, Timestamp
 
 
-START = datetime.utcnow()
-STEP = timedelta(minutes=1)
+START = Timestamp.utcnow()
+STEP = Timedelta(minutes=1)
 
 
 class TestTimeSeries(TestCase):

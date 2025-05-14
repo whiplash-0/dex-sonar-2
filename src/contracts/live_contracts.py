@@ -3,7 +3,6 @@ import concurrent
 import inspect
 import logging
 from dataclasses import dataclass
-from datetime import timedelta
 from typing import Callable, Iterable, Optional
 
 from src.contracts.contract import Contract, Symbol
@@ -12,14 +11,14 @@ from src.contracts.pybit_wrapper import CONFIRM, DATA, PybitWrapper, Response, S
 from src.core.async_tasks import AsyncConcurrentPollingTasks
 from src.support import time_series
 from src.utils import time
-from src.utils.time import Cooldowns
+from src.utils.time import Cooldowns, Timedelta
 
 
 INSTRUMENTS_INFO_RETRIES_ON_ERROR = 3
-INSTRUMENTS_INFO_RETRY_COOLDOWN = timedelta(seconds=1)
+INSTRUMENTS_INFO_RETRY_COOLDOWN = Timedelta(seconds=1)
 
 CONNECTION_CHECK_RETRIES_ON_FAIL = 3
-CONNECTION_CHECK_RETRY_COOLDOWN = timedelta(seconds=1)
+CONNECTION_CHECK_RETRY_COOLDOWN = Timedelta(seconds=1)
 
 
 logger = logging.getLogger(__name__)
@@ -32,11 +31,11 @@ class ConnectionLostError(ConnectionError):
 
 @dataclass
 class Intervals:
-    price_update:                          timedelta = timedelta(seconds=5)
-    price_update_staggering:               timedelta = timedelta(seconds=30)
-    instruments_info_update:               timedelta = timedelta(seconds=60)
-    contracts_synchronization_with_server: timedelta = timedelta(seconds=60)
-    connection_check:                      timedelta = timedelta(seconds=1)
+    price_update:                          Timedelta = Timedelta(seconds=5)
+    price_update_staggering:               Timedelta = Timedelta(seconds=30)
+    instruments_info_update:               Timedelta = Timedelta(seconds=60)
+    contracts_synchronization_with_server: Timedelta = Timedelta(seconds=60)
+    connection_check:                      Timedelta = Timedelta(seconds=1)
 
 
 
@@ -142,7 +141,7 @@ class LiveContracts(Contracts):
             self.pybit.subscribe_to_kline_updates(symbols, self._pybit_callback_on_kline_update)
 
 
-    async def _polling_task_check_connection(self, retries_on_fail: int = 0, retry_cooldown: timedelta = timedelta()):
+    async def _polling_task_check_connection(self, retries_on_fail: int = 0, retry_cooldown: Timedelta = Timedelta()):
         for i in range(1 + retries_on_fail):
             if self.pybit.is_connection_alive(): return
             await asyncio.sleep(retry_cooldown.total_seconds())
@@ -152,7 +151,7 @@ class LiveContracts(Contracts):
         self._disable_pybit_callbacks()
 
         timestamp = time.get_timestamp()
-        delta = self.ticker_updates_cooldowns.get_cooldown() / (len(self) - 1) if len(self) > 1 else timedelta(0)
+        delta = self.ticker_updates_cooldowns.get_cooldown() / (len(self) - 1) if len(self) > 1 else Timedelta()
         for i, x in enumerate(self): self.ticker_updates_cooldowns.set_start_for(x, timestamp + delta * i - self.ticker_updates_cooldowns.get_cooldown())
 
         self._enable_pybit_callbacks()

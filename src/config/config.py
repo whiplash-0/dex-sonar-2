@@ -1,12 +1,12 @@
 import sys
 from configparser import RawConfigParser
 from contextlib import contextmanager
-from datetime import timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from src.utils import utils
 from src.utils.paths import Paths
+from src.utils.time import Timedelta
 
 
 DEFAULT_PRESET = 'default'
@@ -44,14 +44,14 @@ class Config(RawConfigParser):
         """
         return super().getfloat(section, option, **kwargs) / 100 if super().get(section, option, **kwargs) else default
 
-    def get_timedelta_from_seconds(self, section, option, default: timedelta = None, **kwargs) -> timedelta | None:
-        return timedelta(seconds=self.getint(section, option, **kwargs)) if self.get(section, option, **kwargs) else default
+    def get_timedelta_from_seconds(self, section, option, default: Timedelta = None, **kwargs) -> Timedelta | None:
+        return Timedelta(seconds=self.getint(section, option, **kwargs)) if self.get(section, option, **kwargs) else default
 
-    def get_timedelta_from_minutes(self, section, option, default: timedelta = None, **kwargs) -> timedelta | None:
-        return timedelta(minutes=self.getint(section, option, **kwargs)) if self.get(section, option, **kwargs) else default
+    def get_timedelta_from_minutes(self, section, option, default: Timedelta = None, **kwargs) -> Timedelta | None:
+        return Timedelta(minutes=self.getint(section, option, **kwargs)) if self.get(section, option, **kwargs) else default
 
-    def get_timedelta_from_hours(self, section, option, default: timedelta = None, **kwargs) -> timedelta | None:
-        return timedelta(hours=self.getint(section, option, **kwargs)) if self.get(section, option, **kwargs) else default
+    def get_timedelta_from_hours(self, section, option, default: Timedelta = None, **kwargs) -> Timedelta | None:
+        return Timedelta(hours=self.getint(section, option, **kwargs)) if self.get(section, option, **kwargs) else default
 
     def get_timezone(self, section, option, default: ZoneInfo = None, **kwargs) -> ZoneInfo | None:
         return ZoneInfo(self.get(section, option, **kwargs)) if self.get(section, option, **kwargs) else default

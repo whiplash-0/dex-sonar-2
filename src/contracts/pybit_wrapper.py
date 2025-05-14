@@ -1,13 +1,14 @@
 import asyncio
 import inspect
 import logging
-from datetime import datetime, timedelta
 from enum import Enum, auto
 from typing import Callable, Iterable, Optional
 
 from pybit import unified_trading
 from pydantic import BaseModel, Field, field_validator, model_validator
 from requests import exceptions as requests_exceptions
+
+from src.utils.time import Timedelta, Timestamp
 
 
 # pybit keywords
@@ -56,7 +57,7 @@ class Ticker(BaseModel):
     open_interest: float = Field(..., alias='openInterest')
     turnover: float = Field(..., alias='turnover24h')
     funding_rate: Optional[float] = Field(..., alias='fundingRate')
-    next_funding_time: datetime = Field(..., alias='nextFundingTime')
+    next_funding_time: Timestamp = Field(..., alias='nextFundingTime')
 
     best_ask_price: Optional[float] = Field(..., alias='ask1Price')
     best_ask_size: Optional[float] = Field(..., alias='ask1Size')
@@ -76,7 +77,7 @@ class StreamTicker(Ticker):
     Refer to: https://bybit-exchange.github.io/docs/v5/websocket/public/ticker
     """
     cross_sequence: int = Field(..., alias='cs')
-    timestamp: datetime = Field(..., alias='ts')
+    timestamp: Timestamp = Field(..., alias='ts')
 
 
 
@@ -84,7 +85,7 @@ class Kline(BaseModel):
     """
     Refer to: https://bybit-exchange.github.io/docs/v5/market/kline
     """
-    starts: list[datetime] = Field(...)
+    starts: list[Timestamp] = Field(...)
     opens: list[float] = Field(...)
     highs: list[float] = Field(...)
     lows: list[float] = Field(...)
@@ -98,8 +99,8 @@ class StreamKline(BaseModel):
     Refer to: https://bybit-exchange.github.io/docs/v5/websocket/public/kline
     """
     symbol: Symbol = Field(...)
-    start: datetime = Field(..., alias='start')
-    end: datetime = Field(..., alias='end')
+    start: Timestamp = Field(..., alias='start')
+    end: Timestamp = Field(..., alias='end')
     open: float = Field(..., alias='open')
     close: float = Field(..., alias='close')
     high: float = Field(..., alias='high')
@@ -135,8 +136,8 @@ class InstrumentInfo(BaseModel):
     quote_symbol: Symbol = Field(..., alias='quoteCoin')
 
     contract: Contract = Field(..., alias='contractType')
-    launch_time: datetime = Field(..., alias='launchTime')
-    delisting_time: Optional[datetime] = Field(..., alias='deliveryTime')
+    launch_time: Timestamp = Field(..., alias='launchTime')
+    delisting_time: Optional[Timestamp] = Field(..., alias='deliveryTime')
 
     funding_interval: int = Field(..., alias='fundingInterval')
 
@@ -165,7 +166,7 @@ KLINE_INTERVAL = '1'
 
 
 class PybitWrapper:
-    def __init__(self, retries_on_error: int = 0, retry_cooldown: timedelta = timedelta()):
+    def __init__(self, retries_on_error: int = 0, retry_cooldown: Timedelta = Timedelta()):
         self.http = unified_trading.HTTP(testnet=False)
         self.websocket = unified_trading.WebSocket(testnet=False, channel_type=CATEGORY)
         self.retries_on_error = retries_on_error
