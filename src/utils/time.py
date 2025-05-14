@@ -7,7 +7,7 @@ from typing import Generic, Hashable, TypeVar
 MIN_TIMESTAMP = datetime.min.replace(tzinfo=timezone.utc)
 
 
-Second = float
+Seconds = float
 
 
 
@@ -15,7 +15,7 @@ def get_timestamp() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def get_monotonic() -> Second:
+def get_monotonic() -> Seconds:
     return time.monotonic()
 
 
