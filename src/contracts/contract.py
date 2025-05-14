@@ -48,11 +48,13 @@ class Contract:
         self.prices = TimeSeries(step=CANDLE_TIMEFRAME)
         self.turnovers = TimeSeries(step=CANDLE_TIMEFRAME)
 
+
     def __eq__(self, other):
         return other.symbol == self.symbol if isinstance(other, Contract) else False
 
     def __hash__(self):
         return hash(self.symbol)
+
 
     @property
     def is_being_delisted(self):
@@ -65,6 +67,7 @@ class Contract:
     @property
     def funding_rate_per_day(self):
         return self.funding_rate / self.funding_interval * 24
+
 
     def create_chart(
             self,
