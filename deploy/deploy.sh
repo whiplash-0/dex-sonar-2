@@ -1,19 +1,16 @@
 #!/usr/bin/env bash
 
-scripts_dir="deploy"
+SCRIPTS_DIR="deploy"
 
-project_root_path="$(dirname "$(realpath "$0")")/.."
 
-if cd "$project_root_path"; then  # move to project level directory for reproducibility
-  git add *
-  are_there_changes=$(git diff --cached --quiet || echo true)
-  [ "$are_there_changes" = "true" ] && git commit -m "Ops: Temporal commit for Heroku deployment"
+source "$(dirname "${BASH_SOURCE[0]}")/.cd_to_project_root.sh"
 
-  bash "$scripts_dir/branch_deploy.sh" "$(git branch --show-current)"
+# create temporal commit to include uncommited changes
+git add *
+are_there_changes=$(git diff --cached --quiet || echo true)
+[ "$are_there_changes" = "true" ] && git commit -m "Ops: Temporal commit for Heroku deployment"
 
-  [ "$are_there_changes" = "true" ] && git reset --soft HEAD~1
-  [ "$are_there_changes" = "true" ] && git reset
-else
-    echo "Failed to change directory to project root"
-    exit 1
-fi
+bash "$SCRIPTS_DIR/branch_deploy.sh" "$(git branch --show-current)"
+
+[ "$are_there_changes" = "true" ] && git reset --soft HEAD~1
+[ "$are_there_changes" = "true" ] && git reset
