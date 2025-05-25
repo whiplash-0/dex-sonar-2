@@ -19,6 +19,8 @@ from src.utils.utils import format_large_number
 
 
 POLLING_INTERVAL_UPDATE_BOT_STATUS = Timedelta(minutes=1)
+RETURN_CODE_SUCCESS = 0
+RETURN_CODE_FAILURE = 1
 
 
 logs.setup_logging(
@@ -69,9 +71,14 @@ class Application:
         self.callback_queue = asyncio.Queue()
 
     def run(self):
-        logger.info(f'Bot is starting')
-        asyncio.run(self.tasks.run())
-        logger.info(f'Bot stopped. Uptime: {time.format_timedelta(time.get_time_passed_since(self.start_time))}')
+        try:
+            logger.info(f'Bot is starting')
+            asyncio.run(self.tasks.run())
+            logger.info(f'Bot stopped. Uptime: {time.format_timedelta(time.get_time_passed_since(self.start_time))}')
+            os._exit(RETURN_CODE_SUCCESS)  # to avoid pybit thread ending delay
+        except Exception as e:
+            logger.exception(e)
+            os._exit(RETURN_CODE_FAILURE)
 
     def stop(self):
         self.tasks.schedule_task_in_async_thread(self.tasks.cancel())
@@ -136,9 +143,4 @@ class Application:
 
 
 if __name__ == '__main__':
-    try:
-        Application().run()
-        os._exit(0)  # to avoid pybit thread ending delay
-    except Exception as e:
-        logger.exception(e)
-        os._exit(1)
+    Application().run()
