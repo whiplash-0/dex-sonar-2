@@ -19,27 +19,36 @@ TerminationSignalHandler = Callable[[], None]
 
 
 
+class AsyncioRunner:
+    def __init__(self, termination_signal_handler: Optional[TerminationSignalHandler] = None):
+        self.event_loop: Optional[AbstractEventLoop] = None
+        self.termination_signal_handler: Optional[TerminationSignalHandler] = termination_signal_handler
+
+    def run(self, task: Task):
+        async def wrap():
+            self.event_loop = asyncio.get_running_loop()
+
+            if self.termination_signal_handler:
+                self.event_loop.add_signal_handler(signal.SIGINT, self.termination_signal_handler)
+                self.event_loop.add_signal_handler(signal.SIGTERM, self.termination_signal_handler)
+
+            return await task
+
+        asyncio.run(wrap())
+
+    def schedule_task(self, task: Task):
+        """
+        Schedules a task for execution, but doesn't necessarily execute it immediately
+        """
+        asyncio.run_coroutine_threadsafe(task, loop=self.event_loop)
+
+
+
 class AsyncTasksBase(ABC):
-    def __init__(
-            self,
-            *tasks: Task,
-            termination_signal_handler: Optional[TerminationSignalHandler] = None,
-    ):
+    def __init__(self, *tasks: Task):
         self.pending_tasks: Iterator[Task] = iter(tasks)
         self.started_tasks: list[AsyncioTask] = []
-        self.termination_signal_handler: Optional[TerminationSignalHandler] = termination_signal_handler
-        self.event_loop: Optional[AbstractEventLoop] = None
         self._are_cancelled = False
-
-    def run(self):
-        """
-        Must be called at the beginning of the overridden method in subclasses
-        """
-        self.event_loop = asyncio.get_event_loop()
-
-        if self.termination_signal_handler:
-            self.event_loop.add_signal_handler(signal.SIGINT, self.termination_signal_handler)
-            self.event_loop.add_signal_handler(signal.SIGTERM, self.termination_signal_handler)
 
     async def stop(self):
         self._are_cancelled = True
@@ -58,9 +67,6 @@ class AsyncTasksBase(ABC):
     def are_cancelled(self):
         return self._are_cancelled
 
-    def schedule_task_in_async_thread(self, task: Task):
-        asyncio.run_coroutine_threadsafe(task, loop=self.event_loop)
-
     def _start(self) -> Generator[AsyncioTask, None, None]:
         for x in self.pending_tasks:
             self.started_tasks.append(asyncio.create_task(x))
@@ -70,8 +76,6 @@ class AsyncTasksBase(ABC):
 
 class AsyncSequentialTasks(AsyncTasksBase):
     async def run(self):
-        super().run()
-
         try:
             for x in self._start(): await x
 
@@ -89,8 +93,6 @@ class AsyncConcurrentTasks(AsyncTasksBase):
     If an exception occurs, all other related tasks should be cancelled accordingly, this won't be done automatically
     """
     async def run(self, blocking=False):
-        super().run()
-
         try:
             started_tasks = [x for x in self._start()]
             if blocking: await asyncio.gather(*started_tasks)

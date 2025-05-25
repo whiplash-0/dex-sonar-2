@@ -7,7 +7,7 @@ from src.config.config import CONFIG
 from src.contracts import live_contracts
 from src.contracts.contract import Contract
 from src.contracts.live_contracts import Intervals, LiveContracts
-from src.core.async_tasks import AsyncConcurrentTasks, AsyncSequentialTasks
+from src.core.async_tasks import AsyncConcurrentTasks, AsyncSequentialTasks, AsyncioRunner
 from src.core.custom_bot import CustomBot
 from src.core.message import SpikeMessage
 from src.core.spike_detector import Catch, Prefer, Spike, SpikeDetector
@@ -56,6 +56,9 @@ class Application:
             prefer=Prefer.MAX_CHANGE,
             cooldown=CONFIG.get_timedelta_from_minutes('Upspike detector', 'cooldown'),
         )
+        self.asyncio_runner = AsyncioRunner(
+            termination_signal_handler=self.stop,
+        )
         self.tasks = AsyncSequentialTasks(
             self.init(),
             self.bot.run(
@@ -65,7 +68,6 @@ class Application:
                     self.task_handle_callbacks_from_live_contracts(),
                 ).run(blocking=True)
             ),
-            termination_signal_handler=self.stop,
         )
         self.start_time = time.get_timestamp()
         self.callback_queue = asyncio.Queue()
@@ -73,7 +75,7 @@ class Application:
     def run(self):
         try:
             logger.info(f'Bot is starting')
-            asyncio.run(self.tasks.run())
+            self.asyncio_runner.run(self.tasks.run())
             logger.info(f'Bot stopped. Uptime: {time.format_timedelta(time.get_time_passed_since(self.start_time))}')
             os._exit(RETURN_CODE_SUCCESS)  # to avoid pybit thread ending delay
         except Exception as e:
@@ -81,7 +83,7 @@ class Application:
             os._exit(RETURN_CODE_FAILURE)
 
     def stop(self):
-        self.tasks.schedule_task_in_async_thread(self.tasks.stop())
+        self.asyncio_runner.schedule_task(self.tasks.stop())
 
     async def init(self):
         await self.bot.init()
@@ -119,7 +121,7 @@ class Application:
                 (upspike := self.upspike_detector.detect(contract))
         ):
             logger.info(f'{contract.base_symbol + ":":>{contract.BASE_SYMBOL_MAX_LEN + 1}} {upspike.change:+.1%}')
-            self.tasks.schedule_task_in_async_thread(self.callback_queue.put((contract, upspike, time.get_monotonic())))
+            self.asyncio_runner.schedule_task(self.callback_queue.put((contract, upspike, time.get_monotonic())))
 
     async def task_handle_callbacks_from_live_contracts(self):
         while True:
