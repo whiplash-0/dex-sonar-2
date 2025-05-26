@@ -25,8 +25,20 @@ ImageBuffer = BytesIO
 
 class Bot:
     def __init__(self, token: Token, token_silent: Token):
-        self.application: Application = ApplicationBuilder().token(token).defaults(DEFAULTS).build()
-        self.application_silent: Application = ApplicationBuilder().token(token_silent).defaults(DEFAULTS).build()
+        self.application: Application = (
+            ApplicationBuilder()
+            .token(token)
+            .defaults(DEFAULTS)
+            .concurrent_updates(True)
+            .build()
+        )
+        self.application_silent: Application = (
+            ApplicationBuilder()
+            .token(token_silent)
+            .defaults(DEFAULTS)
+            .concurrent_updates(True)
+            .build()
+        )
         self.bot: TelegramBot = self.application.bot
         self.bot_silent: TelegramBot = self.application_silent.bot
 
