@@ -3,7 +3,7 @@ import logging
 from enum import Enum, auto
 from typing import Iterable
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, Update, error
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup, Update, error
 from telegram.ext import ApplicationHandlerStop, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, TypeHandler, filters
 
 from src.core.bot import Bot, UserID
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    markup = ReplyKeyboardMarkup([[InlineKeyboardButton(UpspikeThreshold.NAME)]], resize_keyboard=True)
+    markup = ReplyKeyboardMarkup([[KeyboardButton(UpspikeThreshold.NAME)]], resize_keyboard=True)
     await update.message.reply_text(text=START_TEXT, reply_markup=markup)
 
 
