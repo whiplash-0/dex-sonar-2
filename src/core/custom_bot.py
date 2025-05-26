@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from enum import Enum, auto
 from typing import Iterable
@@ -10,7 +11,6 @@ from src.support.upspike_threshold import UpspikeThreshold as UpspikeThresholdVa
 
 
 COMMANDS = [('start', 'Start the bot and get menu')]
-
 START_TEXT = 'Menu has been pinned to your input area'
 
 class UpspikeThreshold:
@@ -52,19 +52,21 @@ async def send_upspike_threshold_adjusting(update: Update, context: ContextTypes
     await update.message.reply_text(text=UpspikeThreshold.TEXT, reply_markup=create_upspike_threshold_markup())
 
 
+upspike_threshold_lock = asyncio.Lock()
+
 async def adjust_upspike_threshold(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    match query.data:
+    async with upspike_threshold_lock:  # exclude race condition
+        match query.data:
+            case UpspikeThresholdButton.DECREASE:
+                if (value := UpspikeThresholdValue.get() - UpspikeThreshold.STEP) >= UpspikeThreshold.MIN:
+                    await UpspikeThresholdValue.set(value)
 
-        case UpspikeThresholdButton.DECREASE:
-            if (value := UpspikeThresholdValue.get() - UpspikeThreshold.STEP) >= UpspikeThreshold.MIN:
-                await UpspikeThresholdValue.set(value)
-
-        case UpspikeThresholdButton.INCREASE:
-            if (value := UpspikeThresholdValue.get() + UpspikeThreshold.STEP) <= UpspikeThreshold.MAX:
-                await UpspikeThresholdValue.set(value)
+            case UpspikeThresholdButton.INCREASE:
+                if (value := UpspikeThresholdValue.get() + UpspikeThreshold.STEP) <= UpspikeThreshold.MAX:
+                    await UpspikeThresholdValue.set(value)
 
     try:
         await query.edit_message_text(text=UpspikeThreshold.TEXT, reply_markup=create_upspike_threshold_markup())
