@@ -1,5 +1,3 @@
-import asyncio
-import logging
 import re
 
 from sqlalchemy import Column, Float, select, update
@@ -14,9 +12,6 @@ PRECISION = 10
 
 
 Type = float
-
-
-logger = logging.getLogger(__name__)
 
 
 
@@ -53,12 +48,20 @@ class UpspikeThresholdTable(AutoTablenameMixin, Base):
 
 class UpspikeThreshold:
     cached_value = None
-    lock = asyncio.Lock()
 
     @classmethod
     async def init(cls):
-        async with engine.begin() as c: await c.run_sync(Base.metadata.create_all)
-        cls.cached_value = await cls._fetch(init=True)
+        async with engine.begin() as c:  # ensure all tables exist
+            await c.run_sync(Base.metadata.create_all)
+
+        async with session() as s:
+            row = (await s.execute(select(UpspikeThresholdTable))).scalars().first()
+
+            if not row:
+                row = UpspikeThresholdTable()
+                s.add(row); await s.commit()
+
+            cls.cached_value = cls._truncate_rounding_error(row.value)
 
     @classmethod
     def get_name(cls, title_case=False, separator=' '):
@@ -75,36 +78,12 @@ class UpspikeThreshold:
 
     @classmethod
     async def set(cls, value: Type):
-
-        async with cls.lock:
-            database_value = await cls._fetch()
-
-            if cls.cached_value == database_value:  # check if cached value is same database one
-                cls.cached_value = cls._truncate_rounding_error(value)
-
-                async with session() as s:
-                    await s.execute(
-                        update(UpspikeThresholdTable)
-                        .values(value=cls.cached_value)
-                    ); await s.commit()
-
-            else:  # otherwise synchronize them
-                logger.warning(
-                    f'Cached value differs from database value: {cls.cached_value} vs {database_value}. '
-                    f'Synchronizing cached value with database one and ignoring new value'
-                )
-                cls.cached_value = database_value
-
-    @classmethod
-    async def _fetch(cls, init=False) -> Type:
         async with session() as s:
-            row = (await s.execute(select(UpspikeThresholdTable))).scalars().first()
-
-            if init and not row:
-                row = UpspikeThresholdTable()
-                s.add(row); await s.commit()
-
-            return cls._truncate_rounding_error(row.value)
+            cls.cached_value = cls._truncate_rounding_error(value)
+            await s.execute(
+                update(UpspikeThresholdTable)
+                .values(value=cls.cached_value)
+            ); await s.commit()
 
     @staticmethod
     def _truncate_rounding_error(value):
