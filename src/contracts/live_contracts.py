@@ -6,7 +6,7 @@ from typing import Callable, Iterable, Optional
 
 from src.contracts.contract import Contract, Symbol
 from src.contracts.contracts import Contracts
-from src.contracts.pybit_wrapper import CONFIRM, DATA, PybitWrapper, Response, SYMBOL
+from src.contracts.pybit_wrapper import PybitWrapper, Response
 from src.core.workflow_runner import AsyncPollingTasks, ThreadedTasks
 from src.support import time_series
 from src.utils.time import Cooldowns, Time, Timedelta
@@ -192,7 +192,7 @@ class LiveContracts(Contracts):
             if not self._are_pybit_callbacks_enabled():
                 return
 
-            symbol = response[DATA][SYMBOL]
+            symbol = self.pybit.extract_symbol(response)
 
             if not self.ticker_updates_cooldowns.is_in_cooldown(symbol):
                 self.ticker_updates_cooldowns.set_for(symbol)
@@ -221,7 +221,7 @@ class LiveContracts(Contracts):
             if not self._are_pybit_callbacks_enabled():
                 return
 
-            if response[DATA][0][CONFIRM]:  # if candlestick is final
+            if self.pybit.is_candle_final(response):
                 kline = self.pybit.parse_stream_kline(response)
 
                 if contract := self.get(kline.symbol):  # if contract is actually present (there can be mismatch from bybit side)

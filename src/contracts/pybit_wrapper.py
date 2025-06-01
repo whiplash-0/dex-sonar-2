@@ -15,19 +15,6 @@ from src.utils.time import Timedelta, Timestamp
 logger = logging.getLogger(__name__)
 
 
-# pybit keywords
-# response
-RESULT = 'result'
-LIST = 'list'
-DATA = 'data'
-
-# parameters
-NEXT_PAGE_CURSOR = 'nextPageCursor'
-TOPIC = 'topic'
-SYMBOL = 'symbol'
-CONFIRM = 'confirm'
-
-
 Response = dict
 Symbol = str
 
@@ -157,14 +144,11 @@ class InstrumentInfo(BaseModel):
 
 
 
-# contracts
+RESULT = 'result'
+LIST = 'list'
+DATA = 'data'
 CATEGORY = 'linear'
-QUOTE_COIN = 'USDT'
-
-# arguments
-CURSOR = 'cursor'
-
-# argument values
+NEXT_PAGE_CURSOR = 'nextPageCursor'
 LIMIT = 1000
 KLINE_INTERVAL = '1'
 
@@ -233,7 +217,7 @@ class PybitWrapper:
                 x.symbol: x for x in instruments_info
                 if (
                         x.contract is Contract.LINEAR_PERPETUAL and
-                        x.quote_symbol == QUOTE_COIN
+                        x.quote_symbol == 'USDT'
                 )
             }
 
@@ -292,4 +276,12 @@ class PybitWrapper:
 
     @staticmethod
     def parse_stream_kline(response: Response) -> StreamKline:
-        return StreamKline(symbol=response[TOPIC].rsplit('.', 1)[-1], **response[DATA][0])
+        return StreamKline(symbol=response['topic'].rsplit('.', 1)[-1], **response[DATA][0])
+
+    @staticmethod
+    def extract_symbol(response_stream_ticker: Response):
+        return response_stream_ticker[DATA]['symbol']
+
+    @staticmethod
+    def is_candle_final(response_stream_kline: Response):
+        return response_stream_kline[DATA][0]['confirm']
