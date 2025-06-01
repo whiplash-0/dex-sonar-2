@@ -94,6 +94,9 @@ class Kline(BaseModel):
     volumes: list[float] = Field(...)
     turnovers: list[float] = Field(...)
 
+    def __len__(self):
+        return len(self.timestamps)
+
 
 class StreamKline(BaseModel):
     """
