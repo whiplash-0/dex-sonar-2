@@ -16,6 +16,19 @@ MIN_TIMESTAMP = Timestamp.min.replace(tzinfo=timezone.utc)
 
 
 
+class TimeUnit:
+    MICROSECOND = Timedelta(microseconds=1)
+    MILLISECOND = Timedelta(milliseconds=1)
+    SECOND      = Timedelta(seconds=1)
+    MINUTE      = Timedelta(minutes=1)
+    HOUR        = Timedelta(hours=1)
+    DAY         = Timedelta(days=1)
+    WEEK        = Timedelta(weeks=1)
+    MONTH       = Timedelta(days=30)   # approximation
+    YEAR        = Timedelta(days=365)  # approximation
+
+
+
 @dataclass
 class _TimeUnit:
     name: str
@@ -28,12 +41,12 @@ class _TimeUnit:
 _time_units = [
     _TimeUnit(*x) for x in
     [
-        ('second', Timedelta(seconds=1)),
-        ('minute', Timedelta(minutes=1)),
-        ('hour',   Timedelta(hours=1)),
-        ('day',    Timedelta(days=1)),
-        ('month',  Timedelta(days=30)),
-        ('year',   Timedelta(days=365)),
+        ('second', TimeUnit.SECOND),
+        ('minute', TimeUnit.MINUTE),
+        ('hour',   TimeUnit.HOUR),
+        ('day',    TimeUnit.DAY),
+        ('month',  TimeUnit.MONTH),
+        ('year',   TimeUnit.YEAR),
     ]
 ]
 
@@ -53,7 +66,7 @@ def get_time_passed_since(ts: Timestamp) -> Timedelta:
 
 def ceil_timestamp_minute(ts: Timestamp) -> Timestamp:
     ceiled_part = Timedelta(seconds=ts.second, microseconds=ts.microsecond)
-    return ts if not ceiled_part else ts - ceiled_part + Timedelta(minutes=1)
+    return ts if not ceiled_part else ts - ceiled_part + TimeUnit.MINUTE
 
 
 def format_timedelta(td: Timedelta, shorten: bool = False) -> str:
