@@ -10,6 +10,7 @@ _time = importlib.import_module('time')
 Seconds = float
 Timestamp = datetime  # timezone aware by convention, otherwise UTC timezone is assumed
 Timedelta = _timedelta
+TimeRange = tuple[Timestamp, Timestamp]
 
 
 
@@ -66,6 +67,18 @@ class Time:
     @staticmethod
     def passed_since(timestamp: Timestamp) -> Timedelta:
         return Timestamp.now(timezone.utc) - timestamp
+
+    @staticmethod
+    def compute_intersection_duration(time_range1: TimeRange, time_range2: TimeRange) -> Timedelta:
+        (s1, e1), (s2, e2) = time_range1, time_range2
+        return max(
+            (
+                    min(e1, e2)
+                    -
+                    max(s1, s2)
+            ),
+            Timedelta(),
+        )
 
     @staticmethod
     def ceil_to_minute(timestamp: Timestamp) -> Timestamp:
