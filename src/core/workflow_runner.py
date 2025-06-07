@@ -3,13 +3,14 @@ import concurrent
 import logging
 import signal
 from asyncio import AbstractEventLoop, Task, TaskGroup
-from typing import Any, Callable, Coroutine as GeneralCoroutine, Iterable, Iterator, Optional
+from typing import Any, Callable, Coroutine as GeneralCoroutine, Iterable, Iterator, Optional, Sequence, TypeVar
 
 from src.utils.time import Time, Timedelta
 
 
 
 logger = logging.getLogger(__name__)
+
 
 
 VoidFunction = Callable[..., None]
@@ -19,26 +20,38 @@ TerminationSignalHandler = Callable[[], None]
 
 
 
+T = TypeVar('T')
+
+
 class ThreadedTasks:
-    def __init__(self, function: VoidFunction, args: Iterable[tuple], max_workers: Optional[int] = None):
+    def __init__(self, function: VoidFunction, args: Sequence[tuple], max_workers: Optional[int] = None):
         self.function = function
         self.args = args
         self.max_workers = max_workers if max_workers else 10  # requests / urllib3 supports only 10 connections
 
     def run(self):
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            futures = [
-                executor.submit(self.function, *args) for args in self.args
-            ]
+            future_to_index = {
+                executor.submit(self.function, *args): i
+                for i, args in enumerate(self.args)
+            }
+
+            results = [None] * len(self.args)
 
             try:
-                for future in concurrent.futures.as_completed(futures):
-                    future.result()
+                for future in concurrent.futures.as_completed(future_to_index):
+                    results[future_to_index[future]] = future.result()
 
             except Exception as e:
-                for f in futures:
+                for f in future_to_index:
                     f.cancel()
                 raise e
+
+            return results
+
+    @staticmethod
+    def tupleize(iterable: Iterable[T]) -> list[tuple[T]]:
+        return [(x,) for x in iterable]
 
 
 
