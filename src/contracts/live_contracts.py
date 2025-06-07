@@ -102,7 +102,7 @@ class LiveContracts(Contracts):
 
     async def _add_new_contracts_if_any(self) -> Contracts:
         contracts = []
-        instruments_info = await self.pybit.get_instruments_info(cached=True)
+        instruments_info = await self.pybit.get_instruments_info(fix_launch_time=True, cached=True)
         tickers = self.pybit.get_tickers()
 
         if new_symbols := instruments_info.keys() & tickers.keys() - self.get_symbols():
@@ -116,6 +116,7 @@ class LiveContracts(Contracts):
                     base_symbol=ii.base_symbol,
                     quote_symbol=ii.quote_symbol,
 
+                    launch_time=ii.launch_time,
                     delisting_time=ii.delisting_time,
 
                     turnover=t.turnover,

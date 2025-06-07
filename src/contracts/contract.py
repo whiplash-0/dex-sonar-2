@@ -31,6 +31,7 @@ class Contract:
     base_symbol: Symbol
     quote_symbol: Symbol
 
+    launch_time: Timestamp
     delisting_time: Optional[Timestamp]
 
     prices: TimeSeries[Price] = field(init=False)

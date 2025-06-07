@@ -179,7 +179,7 @@ class PybitWrapper:
     def subscribe_to_kline_updates(self, symbols: Iterable[Symbol], callback: Callable[[Response], None]):
         self.websocket.kline_stream(KLINE_INTERVAL, symbols, callback)
 
-    async def get_instruments_info(self, delisted=False, cached=False, correct_launch_time=False) -> dict[Symbol, InstrumentInfo]:
+    async def get_instruments_info(self, delisted=False, fix_launch_time=False, cached=False) -> dict[Symbol, InstrumentInfo]:
         """
         Should be used as only source for instruments / contracts, not `get_tickers()`
         """
@@ -232,7 +232,7 @@ class PybitWrapper:
         }
 
 
-        if correct_launch_time:
+        if fix_launch_time:
 
             launch_times = ThreadedTasks(
                 self._get_launch_time,
