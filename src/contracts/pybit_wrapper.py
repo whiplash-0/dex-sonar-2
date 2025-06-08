@@ -179,7 +179,7 @@ class PybitWrapper:
     def subscribe_to_kline_updates(self, symbols: Iterable[Symbol], callback: Callable[[Response], None]):
         self.websocket.kline_stream(KLINE_INTERVAL, symbols, callback)
 
-    async def get_instruments_info(self, delisted=False, fix_launch_time=False, cached=False) -> dict[Symbol, InstrumentInfo]:
+    async def fetch_instruments_info(self, delisted=False, fix_launch_time=False, cached=False) -> dict[Symbol, InstrumentInfo]:
         """
         Should be used as only source for instruments / contracts, not `get_tickers()`
         """
@@ -235,7 +235,7 @@ class PybitWrapper:
         if fix_launch_time:
 
             launch_times = ThreadedTasks(
-                self._get_launch_time,
+                self._fetch_launch_time,
                 ThreadedTasks.tupleize_single(self.cached_instruments_info.keys()),
                 max_workers=CORRECT_LAUNCH_TIME_MAX_WORKERS,
             ).run()
@@ -252,14 +252,14 @@ class PybitWrapper:
 
         return self.cached_instruments_info
 
-    def get_tickers(self) -> dict[Symbol, Ticker]:
+    def fetch_tickers(self) -> dict[Symbol, Ticker]:
         tickers = [
             Ticker(**x)
             for x in self.http.get_tickers(category=CATEGORY)[RESULT][LIST]
         ]
         return {x.symbol: x for x in tickers}
 
-    def get_kline(
+    def fetch_kline(
             self,
             symbol: Symbol,
             start: Optional[Timestamp] = None,
@@ -299,15 +299,6 @@ class PybitWrapper:
 
         return None
 
-    def _get_launch_time(self, symbol: Symbol) -> Timestamp:
-        if kline :=  self.get_kline(
-            symbol,
-            start=DUMMY_OLD_TIMESTAMP,
-        ):
-            return kline.timestamps[-1]
-        else:
-            return None
-
     @staticmethod
     def parse_stream_ticker(response: Response) -> StreamTicker:
         return StreamTicker(**response, **response[DATA])
@@ -323,3 +314,12 @@ class PybitWrapper:
     @staticmethod
     def is_candle_final(response_stream_kline: Response):
         return response_stream_kline[DATA][0]['confirm']
+
+    def _fetch_launch_time(self, symbol: Symbol) -> Timestamp:
+        if kline := self.fetch_kline(
+            symbol,
+            start=DUMMY_OLD_TIMESTAMP,
+        ):
+            return kline.timestamps[-1]
+        else:
+            return None

@@ -102,8 +102,8 @@ class LiveContracts(Contracts):
 
     async def _add_new_contracts_if_any(self) -> Contracts:
         contracts = []
-        instruments_info = await self.pybit.get_instruments_info(fix_launch_time=True, cached=True)
-        tickers = self.pybit.get_tickers()
+        instruments_info = await self.pybit.fetch_instruments_info(fix_launch_time=True, cached=True)
+        tickers = self.pybit.fetch_tickers()
 
         if new_symbols := instruments_info.keys() & tickers.keys() - self.get_symbols():
 
@@ -155,7 +155,7 @@ class LiveContracts(Contracts):
         self._enable_pybit_callbacks()
 
     async def _polling_task_update_instruments_info(self):
-        instruments_info = await self.pybit.get_instruments_info()
+        instruments_info = await self.pybit.fetch_instruments_info()
 
         for symbol in self.get_symbols() & instruments_info.keys():
             contract = self[symbol]
@@ -165,7 +165,7 @@ class LiveContracts(Contracts):
             contract.delisting_time = ii.delisting_time,
 
     async def _polling_task_synchronize_contracts_with_server(self):
-        instruments_info_symbols = (await self.pybit.get_instruments_info(cached=True)).keys()  # to avoid waiting
+        instruments_info_symbols = (await self.pybit.fetch_instruments_info(cached=True)).keys()  # to avoid waiting
 
         if instruments_info_symbols != self.cached_instruments_info_symbols:  # to also avoid extra waiting
             self.cached_instruments_info_symbols = set(instruments_info_symbols)
@@ -257,7 +257,7 @@ class LiveContracts(Contracts):
 
     def _update_contract_candles(self, symbol: Symbol):
         contract = self[symbol]
-        kline = self.pybit.get_kline(symbol, from_past_to_present=True)
+        kline = self.pybit.fetch_kline(symbol, from_past_to_present=True)
 
         # confirmed (closed) candles
         contract.prices.update(
