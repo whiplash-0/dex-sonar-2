@@ -3,6 +3,7 @@ import concurrent
 import logging
 import signal
 from asyncio import AbstractEventLoop, Task, TaskGroup
+from concurrent.futures import Future
 from typing import Any, Callable, Coroutine as GeneralCoroutine, Iterable, Iterator, Optional, Sequence, TypeVar
 
 from src.utils.time import Time, Timedelta
@@ -77,11 +78,15 @@ class AsyncRunner:
         asyncio.run(wrap())
     
     @classmethod
-    def schedule(cls, coroutine_object: CoroutineObject):
+    def schedule(cls, coroutine_object: CoroutineObject) -> Future:
         """
         Schedules a task for execution, but doesn't necessarily execute it immediately
         """
-        asyncio.run_coroutine_threadsafe(coroutine_object, loop=cls.event_loop)
+        return asyncio.run_coroutine_threadsafe(coroutine_object, loop=cls.event_loop)
+
+    @classmethod
+    def schedule_and_wait(cls, coroutine_object: CoroutineObject) -> Any:
+        return cls.schedule(coroutine_object).result()
 
 
 
