@@ -7,7 +7,7 @@ from typing import Callable, Iterable, Optional
 from src.contracts.contract import Contract, Symbol
 from src.contracts.contracts import Contracts
 from src.contracts.pybit_wrapper import PybitWrapper, Response
-from src.core.workflow_runner import AsyncPollingTasks, ThreadedTasks
+from src.core.workflow_runner import AsyncPollingTasks, AsyncRunner, ThreadedTasks
 from src.support import time_series
 from src.utils.time import Cooldowns, Time, Timedelta
 
@@ -126,7 +126,7 @@ class LiveContracts(Contracts):
                 ))
 
             contracts = self.extend(contracts)
-            self._update_candles(contracts.get_symbols())
+            await self._update_candles(contracts.get_symbols())
 
         else:
             contracts = Contracts()
@@ -239,21 +239,23 @@ class LiveContracts(Contracts):
 
         except time_series.InvalidTimeRange:  # fill candle gaps, often happens when websocket connection is temporarily lost
             logger.warning(f'`{inspect.currentframe().f_code.co_name}()`: Detected time gap in candles. Updating all contracts\' candles manually')
-            self._update_candles()
+            AsyncRunner.schedule_and_wait(self._update_candles())
 
         except Exception:
             logger.exception(f'`{inspect.currentframe().f_code.co_name}()`: Caught exception:'); raise
 
 
-    def _update_candles(self, symbols: Optional[Iterable[Symbol]] = None):
-        ThreadedTasks(
-            self._update_contract_candles,
-            ThreadedTasks.tupleize_single(
-                symbols
-                if symbols is not None else
-                self.get_symbols()
-            ),
-        ).run()
+    async def _update_candles(self, symbols: Optional[Iterable[Symbol]] = None):
+        await asyncio.to_thread(
+            ThreadedTasks(
+                self._update_contract_candles,
+                ThreadedTasks.tupleize_single(
+                    symbols
+                    if symbols is not None else
+                    self.get_symbols()
+                ),
+            ).run
+        )
 
     def _update_contract_candles(self, symbol: Symbol):
         contract = self[symbol]
