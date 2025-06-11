@@ -35,13 +35,12 @@ class Contract:
     launch_time: Timestamp
     delisting_time: Optional[Timestamp]
 
-    prices: TimeSeries[Price] = field(init=False)
-    turnovers: TimeSeries[Turnover] = field(init=False)
-
     turnover: Turnover
     funding_rate: Optional[float]
     funding_interval: int
-    next_funding_time: Timestamp
+
+    prices: TimeSeries[Price] = field(init=False)
+    turnovers: TimeSeries[Turnover] = field(init=False)
 
 
     BASE_SYMBOL_MAX_LEN = 14
@@ -50,7 +49,6 @@ class Contract:
     def __post_init__(self):
         self.prices = TimeSeries(step=CANDLE_TIMEFRAME)
         self.turnovers = TimeSeries(step=CANDLE_TIMEFRAME)
-
 
     def __eq__(self, other):
         return other.symbol == self.symbol if isinstance(other, Contract) else False

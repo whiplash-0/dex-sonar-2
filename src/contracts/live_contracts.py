@@ -42,7 +42,7 @@ class Intervals:
 class LiveContracts(Contracts):
     def __init__(
             self,
-            intervals: Intervals,
+            intervals: Intervals = Intervals(),
             callback_on_price_update: Callable[[Contract], None] = lambda _: None,
             **kwargs,
     ):
@@ -122,7 +122,6 @@ class LiveContracts(Contracts):
                     turnover=t.turnover,
                     funding_rate=t.funding_rate,
                     funding_interval=ii.funding_interval,
-                    next_funding_time=t.next_funding_time,
                 ))
 
             contracts = self.extend(contracts)
@@ -188,6 +187,7 @@ class LiveContracts(Contracts):
     def _disable_pybit_callbacks(self):
         self.are_pybit_callbacks_enabled = False
 
+
     def _pybit_callback_on_ticker_update(self, response: Response):
         try:
             if not self._are_pybit_callbacks_enabled():
@@ -205,9 +205,8 @@ class LiveContracts(Contracts):
                         ticker.price,
                         Time.ceil_to_minute(ticker.timestamp),
                     )
-                    contract.turnover =          ticker.turnover
-                    contract.funding_rate =      ticker.funding_rate
-                    contract.next_funding_time = ticker.next_funding_time
+                    contract.turnover =     ticker.turnover
+                    contract.funding_rate = ticker.funding_rate
 
                     self.callback_on_price_update(contract)
 
