@@ -173,6 +173,7 @@ class PybitWrapper:
     async def fetch_instruments_info(
             self,
             delisted=False,
+            allow_all_quote_coins=False,
             fix_launch_time=False,
             cached=False,
     ) -> dict[Symbol, InstrumentInfo]:
@@ -222,8 +223,11 @@ class PybitWrapper:
                 InstrumentInfo(**x) for x in response_list
             ]
             if (
-                    y.contract is Contract.LINEAR_PERPETUAL and
-                    y.quote_symbol == 'USDT'
+                    y.contract is Contract.LINEAR_PERPETUAL
+                    and (
+                            allow_all_quote_coins
+                            or y.quote_symbol == 'USDT'
+                    )
             )
         }
 
