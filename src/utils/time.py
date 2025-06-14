@@ -10,6 +10,7 @@ _time = importlib.import_module('time')
 Seconds = float
 Timestamp = datetime  # timezone aware by convention, otherwise UTC timezone is assumed
 Timedelta = _timedelta
+Timezone = timezone
 TimeRange = tuple[Timestamp, Timestamp]
 
 
