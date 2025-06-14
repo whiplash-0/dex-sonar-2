@@ -25,10 +25,10 @@ T = TypeVar('T')
 
 
 class ThreadedTasks:
-    def __init__(self, function: VoidFunction, args: Sequence[Iterable[T]], max_workers: Optional[int] = None):
+    def __init__(self, function: VoidFunction, args: Sequence[Iterable[T]], max_workers: int = 10):  # requests / urllib3 supports only 10 connections
         self.function = function
         self.args = args
-        self.max_workers = max_workers if max_workers else 10  # requests / urllib3 supports only 10 connections
+        self.max_workers = max_workers
 
     def run(self):
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
