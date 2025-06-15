@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from requests import exceptions as requests_exceptions
 
 from src.core.workflow_runner import ThreadedTasks
-from src.utils.time import TimeUnit, Timedelta, Timestamp
+from src.utils.time import OldTimeUnit, Timedelta, Timestamp
 
 
 
@@ -153,7 +153,7 @@ DUMMY_OLD_TIMESTAMP = Timestamp(2000, 1, 1)
 
 
 class PybitWrapper:
-    DATA_TIMEFRAME = TimeUnit.MINUTE
+    DATA_TIMEFRAME = OldTimeUnit.MINUTE
 
     def __init__(self, retries_on_error: int = 0, retry_cooldown: Timedelta = Timedelta()):
         self.http = unified_trading.HTTP(testnet=False)
